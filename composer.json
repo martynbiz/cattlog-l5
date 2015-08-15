@@ -1,0 +1,25 @@
+{
+    "name": "martynbiz/cattlog",
+    "type": "library",
+    "description": "A CLI tool for scanning text documents and extracting keys. Store those keys in text files (e.g. PHP array, CSV, JSON, or custom format). Especially useful for scanning view files to extract keys for multi-language applications.",
+    "keywords": ["translations", "multi-language", "multilanguage", "languages"],
+    "homepage": "http://github.com/martynbiz/cattlog",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Martyn Bissett",
+            "email": "martynbissett@yahoo.co.uk"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+    		"Cattlog\\": "src/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.3.*"
+    },
+    "bin": [
+        "bin/cattlog"
+    ]
+}

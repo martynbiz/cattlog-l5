@@ -1,0 +1,176 @@
+#!/usr/bin/env php
+<?php
+
+require realpath(__DIR__ . '/../../../autoload.php');
+
+use Cattlog\Cattlog;
+use Cattlog\Colorize;
+
+define('PROJECT_DIR', getcwd());
+define('TEMPLATE_DIR', realpath(__DIR__ . '/../files/templates/'));
+define('CONFIG_FILE', PROJECT_DIR . '/cattlog.json');
+
+// get config if exists
+$config = file_exists(CONFIG_FILE) ? json_decode(file_get_contents(CONFIG_FILE), true) : null;
+
+$cattlog = new Cattlog($config);
+
+try {
+
+    switch(@$argv[1]) {
+        case 'init':
+
+            // copy a default file from the repo to the PROJECT_DIR
+            $srcFile = realpath(__DIR__ . '/../files/cattlog.json');
+
+            if (is_array($config)) {
+                echo Colorize::warning('File ./cattlog.json already exists.') . PHP_EOL;
+            } else {
+                copy($srcFile, CONFIG_FILE);
+                echo Colorize::success('Created ./cattlog.json config file.') . PHP_EOL;
+            }
+            break;
+
+        case 'scan':
+
+            if (!$config)
+                throw new Exception('Config file missing - run "cattlog init"');
+
+            // get language parameter
+            if (! $lang = @$argv[2])
+                throw new Exception('Language parameter missing - cattlog scan <lang>');
+
+            require TEMPLATE_DIR . '/scan.php';
+
+            break;
+
+        case 'list':
+
+            // get $lang from paramaters
+            if (! $lang = @$argv[2])
+                throw new Exception('Language parameter missing - cattlog list <lang>');
+
+            $data = $cattlog->getDataFromFile($lang);
+
+            foreach ($data as $key => $value) {
+                echo Colorize::success($key) . PHP_EOL;
+            }
+
+            break;
+
+        case 'set_value':
+
+            // get $lang from paramaters
+            if (! $lang = @$argv[2])
+                throw new Exception('Language parameter missing - cattlog get_value <lang> <key>="<value>"');
+
+            // we need the key=value
+            if (! isset($argv[3]))
+                throw new Exception('key/value pair missing - cattlog get_value <lang> <key>="<value>"');
+            elseif (! preg_match('/(.*)=(.*)/', $argv[3], $pairSplit))
+                throw new Exception('key/value pair incorrect format - cattlog get_value <lang> <key>="<value>"');
+
+            $data = $cattlog->getDataFromFile($lang);
+
+            $keyToSet = $pairSplit[1];
+            $newValue = $pairSplit[2];
+
+            if (isset($data[$keyToSet])) {
+
+                // set new value
+                $data[$keyToSet] = $newValue;
+
+                // data is now complete, write to file
+        		$filter = $cattlog->getFilter();
+                $cattlog->writeDataToFile($lang, $data);
+
+                // display success message
+                echo Colorize::success($newValue) . PHP_EOL;
+
+            } else {
+
+                //display error message
+                throw new Exception('Could not find key "' . $keyToSet . '"');
+            }
+
+            break;
+
+        case 'get_value':
+
+            // get $lang from paramaters
+            if (! $lang = @$argv[2])
+                throw new Exception('Language parameter missing - cattlog get_value <lang> <key>');
+
+            // get $key from paramaters
+            if (! $key = @$argv[3])
+                throw new Exception('key pair missing - cattlog get_value <lang> <key>');
+
+            $data = $cattlog->getDataFromFile($lang);
+
+            if (isset($data[$key])) {
+                echo Colorize::success(json_encode($data[$key])) . PHP_EOL;
+            } else {
+                throw new Exception('Could not find key "' . $key . '"');
+            }
+
+            break;
+
+        case 'count':
+
+            // get $lang from paramaters
+            if (! $lang = @$argv[2])
+                throw new Exception('Language parameter missing - cattlog count <lang>');
+
+            $data = $cattlog->getDataFromFile($lang);
+
+            echo Colorize::success(count($data)) . PHP_EOL;
+
+            break;
+
+        case 'update':
+
+            // get $lang from paramaters
+            if (! $lang = @$argv[2])
+                throw new Exception('Language parameter missing - cattlog update <lang>');
+
+            require TEMPLATE_DIR . '/scan.php';
+
+
+            // confirm proceed
+            if (empty($keysToAdd) and empty($keysToRemove)) {
+                echo 'Nothing to update.' . PHP_EOL;
+                break;
+            }
+
+
+            // confirm proceed
+            if (strtolower(readline('Update file? (y/N)')) != 'y') {
+                echo 'Operation aborted.' . PHP_EOL;
+                break;
+            }
+
+
+            // perform update
+
+            // set file path
+            $fileName = $cattlog->getDestFilePath($lang);
+
+            $cattlog->update($lang);
+
+            echo Colorize::success('The following file was updated: ') . PHP_EOL;
+            echo '    ' . $fileName . PHP_EOL;
+
+            break;
+
+        case null: // no command passed, show help
+
+            require TEMPLATE_DIR . '/help.php';
+
+            break;
+
+        default: // no recognised, display error proceeded by help (null)
+            throw new Exception('Command not recognised');
+    }
+} catch (Exception $e) {
+    echo Colorize::error('Error: ' . $e->getMessage()) . PHP_EOL;
+}

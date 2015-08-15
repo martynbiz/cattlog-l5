@@ -1,0 +1,12 @@
+{
+    "src": [
+       "path/to/source/files"
+    ],
+    "dest": "path/to/dest/{lang}.php",
+    "filter": "php",
+    "pattern": "/trans\\(\\'([A-Za-z0-9_]*)\\'\\)/",
+    "languages": [
+        "en",
+        "ja"
+    ]
+}
