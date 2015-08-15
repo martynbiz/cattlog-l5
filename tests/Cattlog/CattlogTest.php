@@ -1,25 +1,36 @@
 <?php
 
 use Cattlog\Cattlog;
+use Cattlog\FileSystem;
 
 class CattlogTest extends PHPUnit_Framework_TestCase
 {
+    /**
+     * @var Cattlog $cattlog Object we'll be testing
+     */
+     protected $cattlog;
+
+     /**
+      * @var FileSystem_mock $fs
+      */
+      protected $fsMock;
+
     public function setUp()
     {
+        // mock file system
+        $this->fsMock = new FileSystem($config);
 
+        // instantiate the cattlog obj
+        $this->cattlog = new Cattlog($this->fsMock);
     }
 
     public function testGetInstanceOfClass()
     {
-        $cattlog = new Cattlog();
-
-        $this->assertTrue($cattlog instanceof Cattlog);
+        $this->assertTrue($this->cattlog instanceof Cattlog);
     }
 
     public function testDiffKeys()
     {
-        $cattlog = new Cattlog();
-
         // test data
         $old = array(
             'REMOVED_2',
@@ -40,7 +51,7 @@ class CattlogTest extends PHPUnit_Framework_TestCase
         );
 
         // assert added
-        $added = $cattlog->getAddedKeys($old, $new);
+        $added = $this->cattlog->getAddedKeys($old, $new);
         sort($added);
         $this->assertEquals(array(
             'NEW_1',
@@ -49,7 +60,7 @@ class CattlogTest extends PHPUnit_Framework_TestCase
         ), $added);
 
         // assert removed
-        $added = $cattlog->getRemovedKeys($old, $new);
+        $added = $this->cattlog->getRemovedKeys($old, $new);
         sort($added);
         $this->assertEquals(array(
             'REMOVED_1',
@@ -59,8 +70,6 @@ class CattlogTest extends PHPUnit_Framework_TestCase
 
     public function testRemoveKeysFromData()
     {
-        $cattlog = new Cattlog();
-
         $data = array(
             'TEST_1' => 'test 1',
             'TEST_2' => 'test 2',
@@ -92,15 +101,13 @@ class CattlogTest extends PHPUnit_Framework_TestCase
             ),
         );
 
-        $actual = $cattlog->removeKeys($data, $keysToRemove);
+        $actual = $this->cattlog->removeKeys($data, $keysToRemove);
 
         $this->assertEquals($expected, $actual);
     }
 
     public function testRemoveEmptyKeysFromData()
     {
-        $cattlog = new Cattlog();
-
         $data = array(
             'TEST_1' => 'test 1',
             'TEST_2' => array(),
@@ -129,15 +136,13 @@ class CattlogTest extends PHPUnit_Framework_TestCase
             ),
         );
 
-        $actual = $cattlog->removeEmptyKeys($data);
+        $actual = $this->cattlog->removeEmptyKeys($data);
 
         $this->assertEquals($expected, $actual);
     }
 
     public function testAddKeysToData()
     {
-        $cattlog = new Cattlog();
-
         $data = array(
             'TEST_1' => 'test 1',
             'TEST_2' => 'test 2',
@@ -161,34 +166,13 @@ class CattlogTest extends PHPUnit_Framework_TestCase
             )
         );
 
-        $actual = $cattlog->addKeys($data, $keysToAdd);
-
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
-     * @dataProvider getEncodingData
-     */
-    public function testEncodingPhp($data=array())
-    {
-        $cattlog = new Cattlog(array(
-            'filter' => 'php'
-        ));
-
-        $expected = '<'.'?php' . PHP_EOL .
-            PHP_EOL .
-            'return ' . var_export($data, true) . ';';
-
-        $filter = $cattlog->getFilter();
-        $actual = $filter->encode($data);
+        $actual = $this->cattlog->addKeys($data, $keysToAdd);
 
         $this->assertEquals($expected, $actual);
     }
 
     public function testGroupKeysByFile()
     {
-        $cattlog = new Cattlog();
-
         $keys = array(
             'messages.hello.title',
             'messages.hello.image',
@@ -207,7 +191,7 @@ class CattlogTest extends PHPUnit_Framework_TestCase
             ),
         );
 
-        $actual = $cattlog->groupKeysByFile($keys);
+        $actual = $this->cattlog->groupKeysByFile($keys);
 
         $this->assertEquals($expected, $actual);
 
@@ -217,24 +201,8 @@ class CattlogTest extends PHPUnit_Framework_TestCase
 
         $expected = array();
 
-        $actual = $cattlog->groupKeysByFile($keys);
+        $actual = $this->cattlog->groupKeysByFile($keys);
 
         $this->assertEquals($expected, $actual);
-    }
-
-    // data providers
-
-    public function getEncodingData()
-    {
-        return array(
-            array(
-                'TEST_1' => 'test 1',
-                'TEST_2' => 'test 2',
-                'TEST_3' => 'test 3',
-            ),
-            array(
-
-            ),
-        );
     }
 }

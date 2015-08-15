@@ -5,6 +5,7 @@ require realpath(__DIR__ . '/../../../autoload.php');
 
 use Cattlog\Cattlog;
 use Cattlog\Colorize;
+use Cattlog\FileSystem;
 
 define('PROJECT_DIR', getcwd());
 define('TEMPLATE_DIR', realpath(__DIR__ . '/../files/templates/'));
@@ -13,7 +14,8 @@ define('CONFIG_FILE', PROJECT_DIR . '/cattlog.json');
 // get config if exists
 $config = file_exists(CONFIG_FILE) ? json_decode(file_get_contents(CONFIG_FILE), true) : null;
 
-$cattlog = new Cattlog($config);
+$fs = new FileSystem($config);
+$cattlog = new Cattlog($fs, $config);
 
 try {
 

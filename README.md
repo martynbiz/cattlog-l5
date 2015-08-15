@@ -109,9 +109,7 @@ So if `"filter": "php"` is set, Cattlog will pick the custom filter and use that
 
 * Allow a array of patterns
 * Can cattlog create a dest folder e.g. mkdir -p ...? new languages?
-* Remove filters from l5 cattlog, we use include instead of $text
-* if the file doesn't exist, create it?
 * only overwrite (or get files that are configured right)
 * cache getDestFiles
-* how much can be taken out of Cattlog class? Filesystem stuff, testable stuff remains
+* how much can be taken out of Cattlog class? Filesystem stuff - Cattlog\File, testable stuff remains
 * write tests for addKeys and removeKeys
