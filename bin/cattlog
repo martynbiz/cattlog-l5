@@ -31,8 +31,25 @@ try {
             }
             break;
 
-        case 'scan':
+        case 'list': // will list keys from stored
 
+            // check config file is not missing
+            if (!$config)
+                throw new Exception('Config file missing - run "cattlog init"');
+
+            // get $lang from paramaters
+            if (! $lang = @$argv[2])
+                throw new Exception('Language parameter missing - cattlog list <lang>');
+
+            $keysFromDest = $cattlog->getKeysFromDestFiles($lang);
+
+            require TEMPLATE_DIR . '/list.php';
+
+            break;
+
+        case 'scan': // report which keys have been added, removed .. no update
+
+            // check config file is not missing
             if (!$config)
                 throw new Exception('Config file missing - run "cattlog init"');
 
@@ -41,20 +58,6 @@ try {
                 throw new Exception('Language parameter missing - cattlog scan <lang>');
 
             require TEMPLATE_DIR . '/scan.php';
-
-            break;
-
-        case 'list':
-
-            // get $lang from paramaters
-            if (! $lang = @$argv[2])
-                throw new Exception('Language parameter missing - cattlog list <lang>');
-
-            $data = $cattlog->getDataFromFile($lang);
-
-            foreach ($data as $key => $value) {
-                echo Colorize::success($key) . PHP_EOL;
-            }
 
             break;
 
@@ -70,28 +73,28 @@ try {
             elseif (! preg_match('/(.*)=(.*)/', $argv[3], $pairSplit))
                 throw new Exception('key/value pair incorrect format - cattlog get_value <lang> <key>="<value>"');
 
-            $data = $cattlog->getDataFromFile($lang);
-
             $keyToSet = $pairSplit[1];
             $newValue = $pairSplit[2];
-
-            if (isset($data[$keyToSet])) {
-
-                // set new value
-                $data[$keyToSet] = $newValue;
-
-                // data is now complete, write to file
-        		$filter = $cattlog->getFilter();
-                $cattlog->writeDataToFile($lang, $data);
-
-                // display success message
-                echo Colorize::success($newValue) . PHP_EOL;
-
-            } else {
-
-                //display error message
-                throw new Exception('Could not find key "' . $keyToSet . '"');
-            }
+var_dump($keyToSet, $newValue);
+            // $data = $cattlog->getDataFromFile($lang);
+            //
+            // if (isset($data[$keyToSet])) {
+            //
+            //     // set new value
+            //     $data[$keyToSet] = $newValue;
+            //
+            //     // data is now complete, write to file
+        	// 	$filter = $cattlog->getFilter();
+            //     $cattlog->writeDataToFile($lang, $data);
+            //
+            //     // display success message
+            //     echo Colorize::success($newValue) . PHP_EOL;
+            //
+            // } else {
+            //
+            //     //display error message
+            //     throw new Exception('Could not find key "' . $keyToSet . '"');
+            // }
 
             break;
 
@@ -104,30 +107,33 @@ try {
             // get $key from paramaters
             if (! $key = @$argv[3])
                 throw new Exception('key pair missing - cattlog get_value <lang> <key>');
-
-            $data = $cattlog->getDataFromFile($lang);
-
-            if (isset($data[$key])) {
-                echo Colorize::success(json_encode($data[$key])) . PHP_EOL;
-            } else {
-                throw new Exception('Could not find key "' . $key . '"');
-            }
+var_dump($key, $lang); // $value = array_get($array, 'products.desk');
+            // $data = $cattlog->getDataFromFile($lang);
+            //
+            // if (isset($data[$key])) {
+            //     echo Colorize::success(json_encode($data[$key])) . PHP_EOL;
+            // } else {
+            //     throw new Exception('Could not find key "' . $key . '"');
+            // }
 
             break;
 
         case 'count':
 
-            // get $lang from paramaters
-            if (! $lang = @$argv[2])
-                throw new Exception('Language parameter missing - cattlog count <lang>');
-
-            $data = $cattlog->getDataFromFile($lang);
-
-            echo Colorize::success(count($data)) . PHP_EOL;
-
-            break;
+            // // get $lang from paramaters
+            // if (! $lang = @$argv[2])
+            //     throw new Exception('Language parameter missing - cattlog count <lang>');
+            //
+            // $data = $cattlog->getDataFromFile($lang);
+            //
+            // echo Colorize::success(count($data)) . PHP_EOL;
+            //
+            // break;
 
         case 'update':
+
+            // when adding new items, even if something seems removed, attempt to
+            // add it
 
             // get $lang from paramaters
             if (! $lang = @$argv[2])
@@ -144,21 +150,105 @@ try {
 
 
             // confirm proceed
-            if (strtolower(readline('Update file? (y/N)')) != 'y') {
-                echo 'Operation aborted.' . PHP_EOL;
+            if (strtolower(readline('Sync files? (y/N)')) != 'y') {
+                echo Colorize::error('Operation aborted.') . PHP_EOL;
                 break;
+            } else {
+                echo PHP_EOL; // keep it tidy
             }
 
 
-            // perform update
 
-            // set file path
-            $fileName = $cattlog->getDestFilePath($lang);
 
-            $cattlog->update($lang);
+            // remove keys
+            if (count($keysToRemove)) {
+                $keysToRemoveGrouped = $cattlog->groupKeysByFile($keysToRemove);
 
-            echo Colorize::success('The following file was updated: ') . PHP_EOL;
-            echo '    ' . $fileName . PHP_EOL;
+                echo 'Removing keys from files:' . PHP_EOL;
+
+                // loop through each group (file) and remove keys
+                foreach ($keysToRemoveGrouped as $group => $keys) {
+
+                    // get data for this group (from file). Get dest files and
+                    // find the one matching
+                    $file = $cattlog->getDestFile($lang, $group);
+
+                    if ($file) {
+
+                        // if a physical file doesn't yet exist, then set as
+                        // an empty array. we'll create a new file
+                        $data = (file_exists($file)) ? include $file : array();
+
+                        // remove these keys from data
+                        $data = $cattlog->removeKeys($data, $keys);
+
+                        // write to file
+                        $cattlog->writeDataToFile($file, $data);
+
+                        echo Colorize::success('  ' . $file) . PHP_EOL;
+                    } else {
+                        // key exists, but file not in config
+                        echo Colorize::warning('  ' . $file) . PHP_EOL;
+                    }
+                }
+            }
+
+            // add keys
+            if (count($keysToAdd)) {
+                $keysToAddGrouped = $cattlog->groupKeysByFile($keysToAdd);
+
+                echo 'Adding to files:' . PHP_EOL;
+
+                // loop through each group (file) and add keys
+                foreach ($keysToAddGrouped as $group => $keys) {
+
+                    // get data for this group (from file). Get dest files and
+                    // find the one matching
+                    $file = $cattlog->getDestFile($lang, $group);
+
+                    if ($file) {
+
+                        // if a physical file doesn't yet exist, then set as
+                        // an empty array. we'll create a new file
+                        $data = (file_exists($file)) ? include $file : array();
+
+                        // add these keys to data
+                        $data = $cattlog->addKeys($data, $keys);
+
+                        // write to file
+                        $cattlog->writeDataToFile($file, $data);
+
+                        echo Colorize::success('  ' . $file) . PHP_EOL;
+                    } else {
+                        // key exists, but file not in config
+                        echo Colorize::warning('  No file for "' . $group . '" found in config["dest"]') . PHP_EOL;
+                    }
+                }
+            }
+
+    		// // add the new ones (blank, coz they're new).
+    		// if (count($keysToAdd))
+    		// 	$data = $this->addKeys($data, $keysToAdd);
+            //
+    		// // data is now complete, write to file
+    		// $this->writeDataToFile($lang, $data);
+
+
+
+
+
+
+
+
+            // // perform update
+            //
+            // // set file path
+            // $fileName = $cattlog->getDestFilePath($lang);
+            //
+            // $cattlog->update($lang);
+            //
+            // echo Colorize::success('The following file was updated: ') . PHP_EOL;
+            // echo '    ' . $fileName . PHP_EOL;
 
             break;
 

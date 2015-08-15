@@ -1,8 +1,6 @@
 <?php
 
 use Cattlog\Cattlog;
-use Cattlog\Filter\Json;
-use Cattlog\Filter\Php;
 
 class CattlogTest extends PHPUnit_Framework_TestCase
 {
@@ -68,17 +66,70 @@ class CattlogTest extends PHPUnit_Framework_TestCase
             'TEST_2' => 'test 2',
             'TEST_3' => 'test 3',
             'TEST_4' => 'test 4',
-            'TEST_5' => 'test 5',
+            'TEST_5' => array(
+                'NEST_1' => 'Nest 1',
+                'NEST_2' => array(
+                    'DEEP_1' => 'Deep 1',
+                    'DEEP_2' => 'Deep 2',
+                )
+            ),
         );
-        $keysToRemove = array('TEST_2', 'TEST_4');
+
+        $keysToRemove = array(
+            'TEST_2',
+            'TEST_4',
+            'TEST_5.NEST_2.DEEP_2',
+        );
 
         $expected = array(
             'TEST_1' => 'test 1',
             'TEST_3' => 'test 3',
-            'TEST_5' => 'test 5',
+            'TEST_5' => array(
+                'NEST_1' => 'Nest 1',
+                'NEST_2' => array(
+                    'DEEP_1' => 'Deep 1',
+                )
+            ),
         );
 
         $actual = $cattlog->removeKeys($data, $keysToRemove);
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    public function testRemoveEmptyKeysFromData()
+    {
+        $cattlog = new Cattlog();
+
+        $data = array(
+            'TEST_1' => 'test 1',
+            'TEST_2' => array(),
+            'TEST_3' => 'test 3',
+            'TEST_4' => array(
+                'NESTED_1' => array(),
+                'NESTED_2' => array(
+                    'DEEP_1' => array(),
+                ),
+            ),
+            'TEST_5' => array(
+                'NESTED_1' => array(),
+                'NESTED_2' => array(
+                    'DEEP_1' => 'test nested deep 1',
+                ),
+            ),
+        );
+
+        $expected = array(
+            'TEST_1' => 'test 1',
+            'TEST_3' => 'test 3',
+            'TEST_5' => array(
+                'NESTED_2' => array(
+                    'DEEP_1' => 'test nested deep 1',
+                ),
+            ),
+        );
+
+        $actual = $cattlog->removeEmptyKeys($data);
 
         $this->assertEquals($expected, $actual);
     }
@@ -94,100 +145,23 @@ class CattlogTest extends PHPUnit_Framework_TestCase
             'TEST_4' => 'test 4',
             'TEST_5' => 'test 5',
         );
-        $keysToAdd = array('TEST_6', 'TEST_7');
+
+        $keysToAdd = array('TEST_2', 'TEST_6', 'TEST_7', 'TEST_8.NEST_1');
 
         $expected = array(
             'TEST_1' => 'test 1',
-            'TEST_2' => 'test 2',
+            'TEST_2' => 'test 2', // this one shouldn't be blank
             'TEST_3' => 'test 3',
             'TEST_4' => 'test 4',
             'TEST_5' => 'test 5',
             'TEST_6' => '',
             'TEST_7' => '',
+            'TEST_8' => array(
+                'NEST_1' => '',
+            )
         );
 
         $actual = $cattlog->addKeys($data, $keysToAdd);
-
-        $this->assertEquals($expected, $actual);
-    }
-
-    // json filter
-
-    public function testGetFilterReturnsJsonFilter()
-    {
-        $cattlog = new Cattlog(array(
-            'filter' => 'json'
-        ));
-
-        $filter = $cattlog->getFilter();
-
-        $this->assertTrue($filter instanceof Json);
-    }
-
-    public function testDecodingJson()
-    {
-        $cattlog = new Cattlog(array(
-            'filter' => 'json'
-        ));
-
-        $expected = array(
-            'TEST_1' => 'test 1',
-            'TEST_2' => 'test 2',
-            'TEST_3' => 'test 3',
-        );
-        $text = json_encode($expected, JSON_PRETTY_PRINT);
-
-        $filter = $cattlog->getFilter();
-        $actual = $filter->decode($text);
-
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
-     * @dataProvider getEncodingData
-     */
-    public function testEncodingJson($data=array())
-    {
-        $cattlog = new Cattlog(array(
-            'filter' => 'json'
-        ));
-
-        $expected = json_encode($data, JSON_PRETTY_PRINT);
-
-        $filter = $cattlog->getFilter();
-        $actual = $filter->encode($data);
-
-        $this->assertEquals($expected, $actual);
-    }
-
-    // php filter
-
-    public function testGetFilterReturnsPhpFilter()
-    {
-        $cattlog = new Cattlog(array(
-            'filter' => 'php'
-        ));
-
-        $filter = $cattlog->getFilter();
-
-        $this->assertTrue($filter instanceof Php);
-    }
-
-    public function testDecodingPhp()
-    {
-        $cattlog = new Cattlog(array(
-            'filter' => 'php'
-        ));
-
-        $expected = array(
-            'TEST_1' => 'test 1',
-            'TEST_2' => 'test 2',
-            'TEST_3' => 'test 3',
-        );
-        $text = var_export($expected, true);
-
-        $filter = $cattlog->getFilter();
-        $actual = $filter->decode($text);
 
         $this->assertEquals($expected, $actual);
     }
@@ -200,7 +174,7 @@ class CattlogTest extends PHPUnit_Framework_TestCase
         $cattlog = new Cattlog(array(
             'filter' => 'php'
         ));
-        
+
         $expected = '<'.'?php' . PHP_EOL .
             PHP_EOL .
             'return ' . var_export($data, true) . ';';
@@ -210,6 +184,45 @@ class CattlogTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals($expected, $actual);
     }
+
+    public function testGroupKeysByFile()
+    {
+        $cattlog = new Cattlog();
+
+        $keys = array(
+            'messages.hello.title',
+            'messages.hello.image',
+            'errors.email',
+            'errors.required.something',
+        );
+
+        $expected = array(
+            'messages' => array(
+                'hello.title',
+                'hello.image',
+            ),
+            'errors' => array(
+                'email',
+                'required.something',
+            ),
+        );
+
+        $actual = $cattlog->groupKeysByFile($keys);
+
+        $this->assertEquals($expected, $actual);
+
+        // empty
+
+        $keys = array();
+
+        $expected = array();
+
+        $actual = $cattlog->groupKeysByFile($keys);
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    // data providers
 
     public function getEncodingData()
     {

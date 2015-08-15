@@ -1,12 +1,9 @@
 {
     "src": [
-       "path/to/source/files"
+        "resources/views"
     ],
-    "dest": "path/to/dest/{lang}.php",
-    "filter": "php",
-    "pattern": "/trans\\(\\'([A-Za-z0-9_]*)\\'\\)/",
+    "pattern": "/trans\\(\\'(.*)\\'\\)/",
     "languages": [
-        "en",
-        "ja"
+        "en"
     ]
 }
