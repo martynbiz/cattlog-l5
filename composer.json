@@ -1,7 +1,7 @@
 {
-    "name": "martynbiz/cattlog",
+    "name": "martynbiz/cattlog-l5",
     "type": "library",
-    "description": "A CLI tool for scanning text documents and extracting keys. Store those keys in text files (e.g. PHP array, CSV, JSON, or custom format). Especially useful for scanning view files to extract keys for multi-language applications.",
+    "description": "A CLI tool for Laravel 5 to sync code and language files within your application.",
     "keywords": ["translations", "multi-language", "multilanguage", "languages"],
     "homepage": "http://github.com/martynbiz/cattlog",
     "license": "MIT",
