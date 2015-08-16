@@ -45,6 +45,11 @@ class Colorize
 		return self::_($text, self::BG_YELLOW);
 	}
 
+	function highlight($text)
+	{
+		return self::_($text, self::BROWN);
+	}
+
 	function error($text)
 	{
 		return self::_($text, self::RED);

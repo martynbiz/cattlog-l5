@@ -14,8 +14,8 @@ define('CONFIG_FILE', PROJECT_DIR . '/cattlog.json');
 // get config if exists
 $config = file_exists(CONFIG_FILE) ? json_decode(file_get_contents(CONFIG_FILE), true) : null;
 
-$fs = new FileSystem($config);
-$cattlog = new Cattlog($fs, $config);
+$fileSystem = new FileSystem($config);
+$cattlog = new Cattlog($fileSystem, $config);
 
 try {
 
@@ -75,28 +75,31 @@ try {
             elseif (! preg_match('/(.*)=(.*)/', $argv[3], $pairSplit))
                 throw new Exception('key/value pair incorrect format - cattlog get_value <lang> <key>="<value>"');
 
-            $keyToSet = $pairSplit[1];
+            $key = $pairSplit[1];
             $newValue = $pairSplit[2];
-var_dump($keyToSet, $newValue);
-            // $data = $cattlog->getDataFromFile($lang);
-            //
-            // if (isset($data[$keyToSet])) {
-            //
-            //     // set new value
-            //     $data[$keyToSet] = $newValue;
-            //
-            //     // data is now complete, write to file
-        	// 	$filter = $cattlog->getFilter();
-            //     $cattlog->writeDataToFile($lang, $data);
-            //
-            //     // display success message
-            //     echo Colorize::success($newValue) . PHP_EOL;
-            //
-            // } else {
-            //
-            //     //display error message
-            //     throw new Exception('Could not find key "' . $keyToSet . '"');
-            // }
+
+            list($file, $key) = $fileSystem->getDestArrayByKey($lang, $key);
+
+            if ($file) {
+
+                // if a physical file doesn't yet exist, then set as
+                // an empty array. we'll create a new file
+                $data = (file_exists($file)) ? $fileSystem->getFileData($file) : array();
+
+                if ($cattlog->hasKey($data, $key)) {
+                    $cattlog->setValue($data, $key, $newValue, array(
+                        'create' => false, // don't create a new key, if none exists
+                        'overwrite' => true,
+                    ));
+
+                    // write to file
+                    $fileSystem->writeDataToFile($file, $data);
+
+                    echo Colorize::success($newValue) . PHP_EOL;
+                } else {
+                    throw new Exception('Could not find key "' . $key . '"');
+                }
+            }
 
             break;
 
@@ -109,14 +112,19 @@ var_dump($keyToSet, $newValue);
             // get $key from paramaters
             if (! $key = @$argv[3])
                 throw new Exception('key pair missing - cattlog get_value <lang> <key>');
-var_dump($key, $lang); // $value = array_get($array, 'products.desk');
-            // $data = $cattlog->getDataFromFile($lang);
-            //
-            // if (isset($data[$key])) {
-            //     echo Colorize::success(json_encode($data[$key])) . PHP_EOL;
-            // } else {
-            //     throw new Exception('Could not find key "' . $key . '"');
-            // }
+
+            list($file, $key) = $fileSystem->getDestArrayByKey($lang, $key);
+
+            if ($file) {
+
+                // if a physical file doesn't yet exist, then set as
+                // an empty array. we'll create a new file
+                $data = (file_exists($file)) ? $fileSystem->getFileData($file) : array();
+
+                $value = $cattlog->getValue($data, $key);
+
+                echo Colorize::success(json_encode($value)) . PHP_EOL;
+            }
 
             break;
 
@@ -152,7 +160,7 @@ var_dump($key, $lang); // $value = array_get($array, 'products.desk');
 
 
             // confirm proceed
-            if (strtolower(readline('Sync files? (y/N)')) != 'y') {
+            if (strtolower(readline('Sync files? (y/N) ')) != 'y') {
                 echo Colorize::error('Operation aborted.') . PHP_EOL;
                 break;
             } else {
@@ -164,93 +172,65 @@ var_dump($key, $lang); // $value = array_get($array, 'products.desk');
 
             // remove keys
             if (count($keysToRemove)) {
-                $keysToRemoveGrouped = $cattlog->groupKeysByFile($keysToRemove);
+                // $keysToRemoveGrouped = $cattlog->groupKeysByFile($keysToRemove);
 
                 echo 'Removing keys from files:' . PHP_EOL;
 
-                // loop through each group (file) and remove keys
-                foreach ($keysToRemoveGrouped as $group => $keys) {
+                // loop through each key
+                foreach ($keysToAdd as $key) {
 
-                    // get data for this group (from file). Get dest files and
-                    // find the one matching
-                    $file = $cattlog->getDestFile($lang, $group);
+                    list($file) = $fileSystem->getDestArrayByKey($lang, $key);
 
                     if ($file) {
 
                         // if a physical file doesn't yet exist, then set as
                         // an empty array. we'll create a new file
-                        $data = (file_exists($file)) ? include $file : array();
+                        $data = (file_exists($file)) ? $fileSystem->getFileData($file) : array();
 
                         // remove these keys from data
                         $data = $cattlog->removeKeys($data, $keys);
 
                         // write to file
-                        $cattlog->writeDataToFile($file, $data);
+                        $fileSystem->writeDataToFile($file, $data);
 
-                        echo Colorize::success('  ' . $file) . PHP_EOL;
+                        echo '  ' . Colorize::success($file) . PHP_EOL;
                     } else {
                         // key exists, but file not in config
-                        echo Colorize::warning('  ' . $file) . PHP_EOL;
+                        echo '  ' . Colorize::warning('No file matches key "' . $key . '"') . PHP_EOL;
                     }
                 }
             }
 
             // add keys
             if (count($keysToAdd)) {
-                $keysToAddGrouped = $cattlog->groupKeysByFile($keysToAdd);
+                // $keysToAddGrouped = $cattlog->groupKeysByFile($keysToAdd);
 
                 echo 'Adding to files:' . PHP_EOL;
 
-                // loop through each group (file) and add keys
-                foreach ($keysToAddGrouped as $group => $keys) {
+                // loop through each key
+                foreach ($keysToAdd as $key) {
 
-                    // get data for this group (from file). Get dest files and
-                    // find the one matching
-                    $file = $cattlog->getDestFile($lang, $group);
+                    list($file) = $fileSystem->getDestArrayByKey($lang, $key);
 
                     if ($file) {
 
                         // if a physical file doesn't yet exist, then set as
                         // an empty array. we'll create a new file
-                        $data = (file_exists($file)) ? include $file : array();
+                        $data = (file_exists($file)) ? $fileSystem->getFileData($file) : array();
 
                         // add these keys to data
                         $data = $cattlog->addKeys($data, $keys);
 
                         // write to file
-                        $cattlog->writeDataToFile($file, $data);
+                        $fileSystem->writeDataToFile($file, $data);
 
-                        echo Colorize::success('  ' . $file) . PHP_EOL;
+                        echo '  ' . Colorize::success($file) . PHP_EOL;
                     } else {
                         // key exists, but file not in config
-                        echo Colorize::warning('  No file for "' . $group . '" found in config["dest"]') . PHP_EOL;
+                        echo '  ' . Colorize::warning('No file matches key "' . $key . '"') . PHP_EOL;
                     }
                 }
             }
-
-    		// // add the new ones (blank, coz they're new).
-    		// if (count($keysToAdd))
-    		// 	$data = $this->addKeys($data, $keysToAdd);
-            //
-    		// // data is now complete, write to file
-    		// $this->writeDataToFile($lang, $data);
-
-
-
-
-
-
-
-
-            // // perform update
-            //
-            // // set file path
-            // $fileName = $cattlog->getDestFilePath($lang);
-            //
-            // $cattlog->update($lang);
-            //
-            // echo Colorize::success('The following file was updated: ') . PHP_EOL;
-            // echo '    ' . $fileName . PHP_EOL;
 
             break;
 

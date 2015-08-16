@@ -2,7 +2,7 @@
 
 use Cattlog\Colorize;
 
-$destFiles = $cattlog->getDestFiles($lang);
+$destFiles = $fileSystem->getDestFiles($lang);
 
 $keysFromDest = $cattlog->getKeysFromDestFiles($lang);
 $keysFromSrc = $cattlog->getKeysFromSrcFiles();
@@ -15,7 +15,7 @@ $keysToRemove = $cattlog->getRemovedKeys($keysFromDest, $keysFromSrc);
 <?php if (file_exists($file)): ?>
     <?php echo $file . PHP_EOL; ?>
 <?php else: ?>
-    <?php echo Colorize::warning($file) . PHP_EOL; ?>
+    <?php echo Colorize::highlight($file) . PHP_EOL; ?>
 <?php endif; ?>
 <?php endforeach; ?>
 

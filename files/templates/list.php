@@ -2,7 +2,7 @@
 
 use Cattlog\Colorize;
 
-$destFiles = $cattlog->getDestFiles($lang);
+$destFiles = $fileSystem->getDestFiles($lang);
 
 ?>Checking...
 <?php foreach ($destFiles as $file): ?>

@@ -18,7 +18,7 @@ class CattlogTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         // mock file system
-        $this->fsMock = new FileSystem($config);
+        $this->fsMock = new FileSystem();
 
         // instantiate the cattlog obj
         $this->cattlog = new Cattlog($this->fsMock);
@@ -81,6 +81,9 @@ class CattlogTest extends PHPUnit_Framework_TestCase
                     'DEEP_1' => 'Deep 1',
                     'DEEP_2' => 'Deep 2',
                 )
+            ),
+            'TEST_6' => array(
+                'NEST_6' => array(), // an empty to be cleaned
             ),
         );
 
@@ -204,5 +207,117 @@ class CattlogTest extends PHPUnit_Framework_TestCase
         $actual = $this->cattlog->groupKeysByFile($keys);
 
         $this->assertEquals($expected, $actual);
+    }
+
+    public function testSetValue()
+    {
+        $actual = array(
+            'errors' => array(
+                'email' => 'Email',
+                'req' => array(
+                    'nested' => 'Nested'
+                ),
+            ),
+        );
+
+        // we'll create a copy from actual first, setValue will alter it
+        $expected = array(
+            'errors' => array(
+                'email' => 'Email SET',
+                'req' => array(
+                    'nested' => 'Nested SET'
+                ),
+            ),
+            'shunsuke' => 'GOAL',
+        );
+
+        $this->cattlog->setValue($actual, 'errors.email', 'Email SET');
+        $this->cattlog->setValue($actual, 'errors.req.nested', 'Nested SET');
+        $this->cattlog->setValue($actual, 'shunsuke', 'GOAL');
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    public function testSetValueWithCreateFalseOption()
+    {
+        $actual = array(
+            'errors' => array(
+                'email' => 'Email',
+                'req' => array(
+                    'nested' => 'Nested'
+                ),
+            ),
+        );
+
+        // we'll create a copy from actual first, setValue will alter it
+        $expected = array(
+            'errors' => array(
+                'email' => 'Email SET',
+                'req' => array(
+                    'nested' => 'Nested SET'
+                ),
+            ),
+            // 'shunsuke' => 'GOAL', // not set
+        );
+
+        $options = array(
+            'create' => false,
+        );
+
+        $this->cattlog->setValue($actual, 'errors.email', 'Email SET', $options);
+        $this->cattlog->setValue($actual, 'errors.req.nested', 'Nested SET', $options);
+        $this->cattlog->setValue($actual, 'shunsuke', 'GOAL', $options);
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    public function testSetValueWithOverwriteFalseOption()
+    {
+        $actual = array(
+            'errors' => array(
+                'email' => 'Email',
+                'req' => array(
+                    'nested' => 'Nested'
+                ),
+            ),
+        );
+
+        // we'll create a copy from actual first, setValue will alter it
+        $expected = array(
+            'errors' => array(
+                'email' => 'Email',
+                'req' => array(
+                    'nested' => 'Nested'
+                ),
+            ),
+            'shunsuke' => 'GOAL',
+        );
+
+        $options = array(
+            'overwrite' => false,
+        );
+
+        $this->cattlog->setValue($actual, 'errors.email', 'Email SET', $options);
+        $this->cattlog->setValue($actual, 'errors.req.nested', 'Nested SET', $options);
+        $this->cattlog->setValue($actual, 'shunsuke', 'GOAL', $options);
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    public function testHasKey()
+    {
+        $data = array(
+            'errors' => array(
+                'email' => 'Email',
+                'req' => array(
+                    'nested' => 'Nested',
+                ),
+            ),
+        );
+
+        $this->assertTrue( $this->cattlog->hasKey($data, 'errors.email') );
+        $this->assertTrue( $this->cattlog->hasKey($data, 'errors.req.nested') );
+        $this->assertFalse( $this->cattlog->hasKey($data, 'shunsuke') );
+        $this->assertFalse( $this->cattlog->hasKey($data, 'shunsuke.nested') );
     }
 }

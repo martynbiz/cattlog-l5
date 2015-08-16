@@ -5,43 +5,23 @@ use Illuminate\Support\Arr;
 
 class Cattlog
 {
+	/**
+	 * @var array $config Config passed in
+	 */
 	protected $config;
 
 	/**
-	 * @var FilterInterface $filter Store the filter once intiated
+	 * @var FileSystem $fileSystem FileSystem object to access files/dirs
 	 */
-	protected $filter;
+	protected $fileSystem;
 
-	public function __construct(FileSystem $fs, $config=array())
+	/**
+	 * @param FileSystem $fileSystem For any file access requests (eg. get array of source files)
+	 * @param array $config Config for the class
+	 */
+	public function __construct(FileSystem $fileSystem, $config=array())
 	{
-		// set defaults
-		$config = array_merge(array(
-			'src' => array("resources/views"),
-			'dest' => 'resources/lang/{lang}'
-		), $config);
-
-		// for laravel, only php is required so we'll hard set this
-		// this may change in future so will keep this in config
-		$config['filter'] = 'php';
-
-		// set the full path of dest
-		if (isset($config['dest'])) {
-			if (!is_array($config['dest'])) $config['dest'] = array($config['dest']);
-
-			foreach ($config['dest'] as $i => $dest) {
-				$config['dest'][$i] = getcwd() . '/' . $dest;
-			}
-		}
-
-		// set the full path of src. also, set as an array even
-		// for single item
-		if (isset($config['src'])) {
-			if (!is_array($config['src'])) $config['src'] = array($config['src']);
-
-			foreach ($config['src'] as $i => $src) {
-				$config['src'][$i] = getcwd() . '/' . $src;
-			}
-		}
+		$this->fileSystem = $fileSystem;
 
 		$this->config = $config;
 	}
@@ -60,14 +40,14 @@ class Cattlog
 		}
 
 		// Tidy up empty arrays
-		// $this->removeEmptyKeys($data);
+		$data = $this->removeEmptyKeys($data);
 
 		return $data;
 	}
 
 	/**
-	 * Will remove empty keys from data. Useful after removing keys,
-	 * and some remain still
+	 * Will remove empty keys from data recursively. Useful after
+	 * removing keys and empty arrays remain
 	 * @param array $data Data to remove keys from
 	 * @param array $keysToRemove Keys to remove from data
 	 * @return array Data with keys removed
@@ -111,7 +91,7 @@ class Cattlog
 
 			// use Laravel's array_get to check if the element exists using dot notation
 			if(! Arr::has($data, $key))
-				Arr::set($data, $key, '');
+				$this->setValue($data, $key, '');
 		}
 
 		return $data;
@@ -150,30 +130,79 @@ class Cattlog
 	}
 
 	/**
+	 * Set key in $data array with dot notation
+	 * @param array $data Data to add keys to
+	 * @param array $key Keys to add to data
+	 * @param array $options Options to e.g. set new keys
+	 * @return array The data array passed in
+	 */
+	public function setValue(&$data, $key, $newValue, $options=array())
+	{
+		// default options
+		$options = array_merge(array(
+			'create' => true, // create new, if none exist
+			'overwrite' => true, // overwrite existing value
+		), $options);
+
+		// use Laravel's array_get to check if the element exists using dot notation
+		if(Arr::has($data, $key)) {
+			if ($options['overwrite']) {
+				Arr::set($data, $key, $newValue);
+			}
+		} elseif ($options['create']) {
+			Arr::set($data, $key, $newValue);
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Get key in $data array with dot notation
+	 * @param array $data Data to add keys to
+	 * @param array $key Keys to add to data
+	 * @return array The data array passed in
+	 */
+	public function getValue($data, $key)
+	{
+		return Arr::get($data, $key);
+	}
+
+	/**
+	 * Check whether key exists in $data
+	 * @param array $data Data to add keys to
+	 * @param array $key Keys to add to data
+	 * @return boolean True if exists
+	 */
+	public function hasKey($data, $key)
+	{
+		return Arr::has($data, $key);
+	}
+
+	/**
 	 * Get the keys from source directories
 	 * @return array Keys in an indexed array
 	 */
 	public function getKeysFromSrcFiles()
 	{
 		// get files in dir
-		$files = $this->getFiles($this->config['src']);
+		$files = $this->fileSystem->getSrcFiles();
 
 		// for each file, get the key in string format
 		$keys = array();
 		foreach ($files as $file) {
 
 			// get the contents of the file
-			$contents = file_get_contents($file);
+			$contents = $this->fileSystem->getFileContents($file);
 
 			// regex on it to get all the matches
 			preg_match_all($this->config['pattern'], $contents, $matches);
 
 			// put the matches into
-			$keys = array_merge(array_flip($matches[1]), $keys);
+			$keys = array_merge($matches[1], $keys);
 		}
 
 		// array_flip will deal with the duplicates
-		return array_keys($keys);
+		return $keys;
 	}
 
 	/**
@@ -183,7 +212,7 @@ class Cattlog
 	public function getKeysFromDestFiles($lang)
 	{
 		// get files in dir
-		$files = $this->getDestFiles($lang);
+		$files = $this->fileSystem->getDestFiles($lang);
 
 		// for each file, get the key in string format
 		$keys = array();
@@ -196,49 +225,10 @@ class Cattlog
 			// flatten to get keys such as "between.numeric", then take the
 			// keys only (array_keys), and merge with existing (array_merge)
 			if (file_exists($file))
-				$keys = array_merge(array_keys(Arr::dot(include $file, $prefix)), $keys);
+				$keys = array_merge(array_keys(Arr::dot($this->fileSystem->getFileData($file), $prefix)), $keys);
 		}
 
 		return $keys;
-	}
-
-	/**
-	 * Will return the string path of the file
-	 * @return string Dest file path
-	 */
-	public function getDestFile($lang, $group)
-	{
-		$destFiles = $this->getDestFiles($lang);
-
-		// loop until a match is found
-		$found = null;
-		foreach ($destFiles as $file) {
-			if (preg_match('/' . $group . '\.php$/', $file, $output_array)) {
-				$found = $file;
-				break;
-			}
-		}
-
-		// get files in dir
-		return $found;
-	}
-
-	/**
-	 * Get the config array (may be altered from array that was given in instantiation)
-	 * @return array Config
-	 */
-	public function getDestFiles($lang)
-	{
-		// set dest path by $lang e.g. /path/to/dest/{en}/
-		$destDirs = $this->config['dest'];
-
-		// replace path with $lang
-		foreach ($destDirs as $i => $dir) {
-			$destDirs[$i] = str_replace("{lang}", $lang, $dir);
-		}
-
-		// get files in dir
-		return $destDirs;
 	}
 
 	/**
@@ -261,73 +251,5 @@ class Cattlog
 		}
 
 		return $grouped;
-	}
-
-	/**
-	 * Write the data to file
-	 * @param string $file File to write e.g. "/path/to/lang/en/messages.php"
-	 * @param array $data Data to write
-	 * @return void
-	 */
-	public function writeDataToFile($file, $data)
-	{
-		$data = '<'.'?php' . PHP_EOL .
-        PHP_EOL .
-        'return ' . var_export($data, true) . ';';
-
-		// TODO this is the only place we use encode, get rid of filter ne
-		file_put_contents($file, $data);
-	}
-
-
-	// TODO Move to Cattlog\Util\FileSystem
-
-	/**
-	 * Recursive scan to get files within a dir
-	 * @param string|array $dirs Directories to scan
-	 * @param string $prefix Attach a prefix to each file (optional)
-	 * @return array Files
-	 */
-	public function getFiles($dirs)
-	{
-		// ensure that $dirs is an array of directories for the locale_lookup
-		// if set only as string (e.g. "/path/to/src")
-		if (! is_array($dirs))
-			$dirs = array($dirs);
-
-		// remove trailing slash from config dir
-		$files = array();
-		foreach ($dirs as $dir) {
-			if (is_dir($dir)) {
-				$dir = rtrim($dir, '\\/');
-				$files = array_merge($files, $this->_getFilesRecursive($dir));
-			} elseif (is_file($dir)) {
-				array_push($files, $dir); // $dir is a file
-			}
-		}
-
-		return $files;
-	}
-
-	/**
-	 * Recursive scan to get files within a dir
-	 * @param string $dir Directory to scan
-	 * @param string $prefix Attach a prefix to each file (optional)
-	 * @return array Files
-	 */
-	protected function _getFilesRecursive($dir)
-	{
-		$files = array();
-		foreach (scandir($dir) as $f) {
-			if ($f !== '.' and $f !== '..') {
-				if (is_dir("$dir/$f")) {
-					$files = array_merge($files, $this->_getFilesRecursive("$dir/$f"));
-				} else {
-					$files[] = $dir.'/'.$f;
-				}
-			}
-		}
-
-		return $files;
 	}
 }
