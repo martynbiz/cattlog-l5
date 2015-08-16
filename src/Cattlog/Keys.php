@@ -2,13 +2,11 @@
 
 // as this tool is for use within Laravel, we'll just use some of it's array helpers
 use Illuminate\Support\Arr;
+use Cattlog\ConfigTrait;
 
 class Keys
 {
-	/**
-	 * @var array $config Config passed in
-	 */
-	protected $config;
+	use ConfigTrait;
 
 	/**
 	 * @var FileSystem $fileSystem FileSystem object to access files/dirs
@@ -203,10 +201,10 @@ class Keys
 			$contents = $this->fileSystem->getFileContents($file);
 
 			// regex on it to get all the matches
-			preg_match_all($this->config['pattern'], $contents, $matches);
-
-			// put the matches into
-			$keys = array_merge($matches[1], $keys);
+			foreach ($this->config['pattern'] as $pattern) {
+				preg_match_all($pattern, $contents, $matches);
+				$keys = array_merge($matches[1], $keys);
+			}
 		}
 
 		// array_flip will deal with the duplicates

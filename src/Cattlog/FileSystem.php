@@ -4,10 +4,7 @@
 
 class FileSystem
 {
-	/**
-	 * @var array $config Config passed in
-	 */
-	protected $config;
+	use ConfigTrait;
 
 	public function __construct($config=array())
 	{

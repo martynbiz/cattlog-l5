@@ -346,6 +346,57 @@ class KeysTest extends PHPUnit_Framework_TestCase
         $actualKeys = $this->cattlog->getKeysFromDestFiles('en');
 
         $this->assertEquals(array_keys($expected), $actualKeys);
+    }
 
+    public function testSetConfig()
+    {
+        $expected = array(
+            'pattern' => '/new_pattern/',
+            'languages' => array(
+                'en',
+                'ja',
+                'ru',
+            ),
+        );
+
+        $this->cattlog->setConfig($expected);
+
+        $actual = $this->cattlog->getConfig();
+
+        $this->assertEquals($expected['pattern'], $actual['pattern']);
+        $this->assertEquals($expected['languages'], $actual['languages']);
+    }
+
+    public function testGetKeysFromSrcFiles()
+    {
+        $this->cattlog->setConfig(array(
+            "pattern" => array(
+                "/Lang::get\\s*\\(\\s*\\'([A-Za-z0-9_\\-\\.]*)\\'/",
+                "/trans\\s*\\(\\s*\\'([A-Za-z0-9_\\-\\.]*)\\'/"
+            ),
+            "languages" => array(
+                "en"
+            ),
+        ));
+
+        $this->fsMock
+            ->method('getSrcFiles')
+            ->willReturn( array(
+                '/path/to/views/home/index.phtml',
+            ) );
+
+        $this->fsMock
+            ->method('getFileContents')
+            ->willReturn( '<h1>{{trans(\'messages.home.title\')}}</h1>' . PHP_EOL .
+            '<p>{{trans(\'messages.home.intro\')}}</p>' . PHP_EOL);
+
+        $expected = array(
+            'messages.home.title',
+            'messages.home.intro',
+        );
+
+        $actual = $this->cattlog->getKeysFromSrcFiles();
+
+        $this->assertEquals($expected, $actual);
     }
 }

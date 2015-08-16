@@ -107,9 +107,7 @@ So if `"filter": "php"` is set, Cattlog will pick the custom filter and use that
 
 ##TODO##
 
-
-* rename Cattlog -> Keys, and simplify methods names (e.g. countKeys -> count)
-* Allow a array of patterns
+* Allow a array of patterns, optional single/double quotes
 * Can cattlog create a dest folder e.g. mkdir -p ...? new languages?
 * only overwrite (or get files that are configured right)
 * cache getDestFiles
@@ -118,5 +116,9 @@ So if `"filter": "php"` is set, Cattlog will pick the custom filter and use that
 * getDestByKey - replace getDestFile (..$group)
 * getDestFiles($lang, array('file_exists' => true))
 * do all commands check for correct number of params?
+* checking valid_languages?
+* re-introduce Cattlog/Storage? writeData, getData
 
 * how can cattlog be incorporated into "php artisan ..."?
+
+does laravel support sub lang folders too? lang/en/messages/hello.php
