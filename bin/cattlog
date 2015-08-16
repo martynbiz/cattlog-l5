@@ -3,7 +3,7 @@
 
 require realpath(__DIR__ . '/../../../autoload.php');
 
-use Cattlog\Cattlog;
+use Cattlog\Keys as Cattlog;
 use Cattlog\Colorize;
 use Cattlog\FileSystem;
 
@@ -222,7 +222,7 @@ try {
                         $data = $fileSystem->getFileData($file);
 
                         // remove these keys from data
-                        $data = $cattlog->removeKeys($data, $innerKey);
+                        $data = $cattlog->remove($data, $innerKey);
 
                         // write to file
                         $fileSystem->writeDataToFile($file, $data);

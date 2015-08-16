@@ -108,7 +108,6 @@ So if `"filter": "php"` is set, Cattlog will pick the custom filter and use that
 ##TODO##
 
 
-* make count show empties and total, list show empties at top highlighted
 * rename Cattlog -> Keys, and simplify methods names (e.g. countKeys -> count)
 * Allow a array of patterns
 * Can cattlog create a dest folder e.g. mkdir -p ...? new languages?

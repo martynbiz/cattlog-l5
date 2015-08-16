@@ -1,9 +1,9 @@
 <?php
 
-use Cattlog\Cattlog;
+use Cattlog\Keys as Cattlog;
 use Cattlog\FileSystem;
 
-class CattlogTest extends PHPUnit_Framework_TestCase
+class KeysTest extends PHPUnit_Framework_TestCase
 {
     /**
      * @var Cattlog $cattlog Object we'll be testing
@@ -71,7 +71,7 @@ class CattlogTest extends PHPUnit_Framework_TestCase
         ), $added);
     }
 
-    public function testRemoveKeysFromData()
+    public function testRemove()
     {
         $data = array(
             'TEST_1' => 'test 1',
@@ -87,6 +87,23 @@ class CattlogTest extends PHPUnit_Framework_TestCase
             ),
             'TEST_6' => array(
                 'NEST_6' => array(), // an empty to be cleaned
+            ),
+
+            // test empties are removed
+            'TEST_11' => 'test 1',
+            'TEST_12' => array(),
+            'TEST_13' => 'test 3',
+            'TEST_14' => array(
+                'NESTED_1' => array(),
+                'NESTED_2' => array(
+                    'DEEP_1' => array(),
+                ),
+            ),
+            'TEST_15' => array(
+                'NESTED_1' => array(),
+                'NESTED_2' => array(
+                    'DEEP_1' => 'test nested deep 1',
+                ),
             ),
         );
 
@@ -105,49 +122,23 @@ class CattlogTest extends PHPUnit_Framework_TestCase
                     'DEEP_1' => 'Deep 1',
                 )
             ),
-        );
 
-        $actual = $this->cattlog->removeKeys($data, $keysToRemove);
-
-        $this->assertEquals($expected, $actual);
-    }
-
-    public function testRemoveEmptyKeysFromData()
-    {
-        $data = array(
-            'TEST_1' => 'test 1',
-            'TEST_2' => array(),
-            'TEST_3' => 'test 3',
-            'TEST_4' => array(
-                'NESTED_1' => array(),
-                'NESTED_2' => array(
-                    'DEEP_1' => array(),
-                ),
-            ),
-            'TEST_5' => array(
-                'NESTED_1' => array(),
+            // empties should have been removed from here...
+            'TEST_11' => 'test 1',
+            'TEST_13' => 'test 3',
+            'TEST_15' => array(
                 'NESTED_2' => array(
                     'DEEP_1' => 'test nested deep 1',
                 ),
             ),
         );
 
-        $expected = array(
-            'TEST_1' => 'test 1',
-            'TEST_3' => 'test 3',
-            'TEST_5' => array(
-                'NESTED_2' => array(
-                    'DEEP_1' => 'test nested deep 1',
-                ),
-            ),
-        );
-
-        $actual = $this->cattlog->removeEmptyKeys($data);
+        $actual = $this->cattlog->remove($data, $keysToRemove);
 
         $this->assertEquals($expected, $actual);
     }
 
-    public function testAddKeysToData()
+    public function testAdd()
     {
         $data = array(
             'TEST_1' => 'test 1',
@@ -172,7 +163,7 @@ class CattlogTest extends PHPUnit_Framework_TestCase
             )
         );
 
-        $actual = $this->cattlog->addKeys($data, $keysToAdd);
+        $actual = $this->cattlog->add($data, $keysToAdd);
 
         $this->assertEquals($expected, $actual);
     }

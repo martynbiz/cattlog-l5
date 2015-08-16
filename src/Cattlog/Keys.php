@@ -3,7 +3,7 @@
 // as this tool is for use within Laravel, we'll just use some of it's array helpers
 use Illuminate\Support\Arr;
 
-class Cattlog
+class Keys
 {
 	/**
 	 * @var array $config Config passed in
@@ -32,7 +32,7 @@ class Cattlog
 	 * @param string|array $keys Keys to remove from data
 	 * @return array Data with keys removed
 	 */
-	public function removeKeys($data, $keys)
+	public function remove($data, $keys)
 	{
 		// ensure keys is an array
 		if (! is_array($keys))
@@ -56,7 +56,7 @@ class Cattlog
 	 * @param array $keysToRemove Keys to remove from data
 	 * @return array Data with keys removed
 	 */
-	public function removeEmptyKeys($data) {
+	protected function removeEmptyKeys($data) {
 
 		// first loop through and build array of elements to remove
 		$keysToRemove = array();
@@ -87,15 +87,15 @@ class Cattlog
 	 * @param array $keysToAdd Keys to add to data
 	 * @return array Data with keys added
 	 */
-	public function addKeys($data, $keysToAdd)
+	public function add($data, $keys)
 	{
 		// ensure keys is an array
-		if (! is_array($keysToAdd))
-			$keysToAdd = array($keysToAdd);
+		if (! is_array($keys))
+			$keys = array($keys);
 
 		// loop through each key and add it
 		// only add if it doesn't exist, just encase we accidentally overwrite
-		foreach ($keysToAdd as $key) {
+		foreach ($keys as $key) {
 
 			// use Laravel's array_get to check if the element exists using dot notation
 			if(! Arr::has($data, $key))
