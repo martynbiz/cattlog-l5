@@ -3,8 +3,7 @@
         "resources/views"
     ],
     "dest": [
-        "resources/lang/{lang}/messages.php",
-        "resources/lang/{lang}/test.php"
+        "resources/lang/{lang}/messages.php"
     ],
     "pattern": [
         "/trans\\s*\\(\\s*[\\'|\\\"]([A-Za-z0-9_\\-\\.]*)[\\'|\\\"]/",
