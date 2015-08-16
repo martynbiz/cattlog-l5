@@ -107,6 +107,9 @@ So if `"filter": "php"` is set, Cattlog will pick the custom filter and use that
 
 ##TODO##
 
+
+* make count show empties and total, list show empties at top highlighted
+* rename Cattlog -> Keys, and simplify methods names (e.g. countKeys -> count)
 * Allow a array of patterns
 * Can cattlog create a dest folder e.g. mkdir -p ...? new languages?
 * only overwrite (or get files that are configured right)
@@ -114,3 +117,7 @@ So if `"filter": "php"` is set, Cattlog will pick the custom filter and use that
 * make use of FileSystem for mocking - getKeysFromSrcFiles, getKeysFromDestFiles, setValue
 * remove Arr::* calls from cli script
 * getDestByKey - replace getDestFile (..$group)
+* getDestFiles($lang, array('file_exists' => true))
+* do all commands check for correct number of params?
+
+* how can cattlog be incorporated into "php artisan ..."?

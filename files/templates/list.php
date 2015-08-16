@@ -13,6 +13,9 @@ $destFiles = $fileSystem->getDestFiles($lang);
 <?php endif; ?>
 <?php endforeach; ?>
 
-<?php foreach ($keysFromDest as $key): ?>
-<?php echo Colorize::success($key) . PHP_EOL; ?>
+<?php foreach ($emptyKeys as $key => $value): ?>
+<?php echo Colorize::warning($key) . PHP_EOL; ?>
+<?php endforeach; ?>
+<?php foreach ($nonEmptyKeys as $key => $value): ?>
+<?php echo $key . PHP_EOL; ?>
 <?php endforeach; ?>

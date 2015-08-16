@@ -43,7 +43,15 @@ try {
             if (! $lang = @$argv[2])
                 throw new Exception('Language parameter missing - cattlog list <lang>');
 
-            $keysFromDest = $cattlog->getKeysFromDestFiles($lang);
+            // $keysFromDest = $cattlog->getKeysFromDestFiles($lang);
+            $data = $cattlog->getKeysWithValuesFromDestFiles($lang);
+
+            $emptyKeys = array_filter($data, function ($value) {
+                return empty($value);
+            });
+            $nonEmptyKeys = array_filter($data, function ($value) {
+                return !empty($value);
+            });
 
             require TEMPLATE_DIR . '/list.php';
 
@@ -113,16 +121,11 @@ try {
             if (! $key = @$argv[3])
                 throw new Exception('key pair missing - cattlog get_value <lang> <key>');
 
+            // from the original key (e.g. messages.hello), get the file and key (hello)
             list($file, $key) = $fileSystem->getDestArrayByKey($lang, $key);
 
-            if ($file) {
-
-                // if a physical file doesn't yet exist, then set as
-                // an empty array. we'll create a new file
-                $data = (file_exists($file)) ? $fileSystem->getFileData($file) : array();
-
+            if ($data = $fileSystem->getFileData($file)) {
                 $value = $cattlog->getValue($data, $key);
-
                 echo Colorize::success(json_encode($value)) . PHP_EOL;
             }
 
@@ -130,15 +133,15 @@ try {
 
         case 'count':
 
-            // // get $lang from paramaters
-            // if (! $lang = @$argv[2])
-            //     throw new Exception('Language parameter missing - cattlog count <lang>');
-            //
-            // $data = $cattlog->getDataFromFile($lang);
-            //
-            // echo Colorize::success(count($data)) . PHP_EOL;
-            //
-            // break;
+            // get $lang from paramaters
+            if (! $lang = @$argv[2])
+                throw new Exception('Language parameter missing - cattlog count <lang>');
+
+            $data = $cattlog->getKeysWithValuesFromDestFiles($lang);
+
+            echo Colorize::success(count($data)) . PHP_EOL;
+
+            break;
 
         case 'update':
 
@@ -169,26 +172,25 @@ try {
 
 
 
+            // add keys
+            if (count($keysToAdd)) {
+                // $keysToAddGrouped = $cattlog->groupKeysByFile($keysToAdd);
 
-            // remove keys
-            if (count($keysToRemove)) {
-                // $keysToRemoveGrouped = $cattlog->groupKeysByFile($keysToRemove);
-
-                echo 'Removing keys from files:' . PHP_EOL;
+                echo 'Adding to files:' . PHP_EOL;
 
                 // loop through each key
                 foreach ($keysToAdd as $key) {
 
-                    list($file) = $fileSystem->getDestArrayByKey($lang, $key);
+                    list($file, $innerKey) = $fileSystem->getDestArrayByKey($lang, $key);
 
                     if ($file) {
 
                         // if a physical file doesn't yet exist, then set as
                         // an empty array. we'll create a new file
-                        $data = (file_exists($file)) ? $fileSystem->getFileData($file) : array();
+                        $data = $fileSystem->getFileData($file);
 
-                        // remove these keys from data
-                        $data = $cattlog->removeKeys($data, $keys);
+                        // add these keys to data
+                        $data = $cattlog->addKeys($data, $innerKey);
 
                         // write to file
                         $fileSystem->writeDataToFile($file, $data);
@@ -201,25 +203,26 @@ try {
                 }
             }
 
-            // add keys
-            if (count($keysToAdd)) {
-                // $keysToAddGrouped = $cattlog->groupKeysByFile($keysToAdd);
 
-                echo 'Adding to files:' . PHP_EOL;
+            // remove keys
+            if (count($keysToRemove)) {
+                // $keysToRemoveGrouped = $cattlog->groupKeysByFile($keysToRemove);
+
+                echo 'Removing keys from files:' . PHP_EOL;
 
                 // loop through each key
-                foreach ($keysToAdd as $key) {
+                foreach ($keysToRemove as $key) {
 
-                    list($file) = $fileSystem->getDestArrayByKey($lang, $key);
+                    list($file, $innerKey) = $fileSystem->getDestArrayByKey($lang, $key);
 
                     if ($file) {
 
                         // if a physical file doesn't yet exist, then set as
                         // an empty array. we'll create a new file
-                        $data = (file_exists($file)) ? $fileSystem->getFileData($file) : array();
+                        $data = $fileSystem->getFileData($file);
 
-                        // add these keys to data
-                        $data = $cattlog->addKeys($data, $keys);
+                        // remove these keys from data
+                        $data = $cattlog->removeKeys($data, $innerKey);
 
                         // write to file
                         $fileSystem->writeDataToFile($file, $data);

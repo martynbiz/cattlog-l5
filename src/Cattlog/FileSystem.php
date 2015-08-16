@@ -63,11 +63,11 @@ class FileSystem
 
 	/**
 	 * Get the data from a file into an array
-	 * @return string File content
+	 * @return array Data from file, or empty array (! file_exists)
 	 */
 	public function getFileData($file)
 	{
-		return include $file;
+		return (file_exists($file)) ? include($file) : array();
 	}
 
 	/**

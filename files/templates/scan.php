@@ -4,12 +4,6 @@ use Cattlog\Colorize;
 
 $destFiles = $fileSystem->getDestFiles($lang);
 
-$keysFromDest = $cattlog->getKeysFromDestFiles($lang);
-$keysFromSrc = $cattlog->getKeysFromSrcFiles();
-
-$keysToAdd = $cattlog->getAddedKeys($keysFromDest, $keysFromSrc);
-$keysToRemove = $cattlog->getRemovedKeys($keysFromDest, $keysFromSrc);
-
 ?>Checking...
 <?php foreach ($destFiles as $file): ?>
 <?php if (file_exists($file)): ?>
@@ -19,7 +13,15 @@ $keysToRemove = $cattlog->getRemovedKeys($keysFromDest, $keysFromSrc);
 <?php endif; ?>
 <?php endforeach; ?>
 
-<?php if (count($keysToAdd)): ?>
+<?php
+
+$keysFromDest = $cattlog->getKeysFromDestFiles($lang);
+$keysFromSrc = $cattlog->getKeysFromSrcFiles();
+
+$keysToAdd = $cattlog->getAddedKeys($keysFromDest, $keysFromSrc);
+$keysToRemove = $cattlog->getRemovedKeys($keysFromDest, $keysFromSrc);
+
+if (count($keysToAdd)): ?>
 The following new keys were found:
 <?php foreach ($keysToAdd as $value): ?>
     <?php echo Colorize::_($value, Colorize::BG_GREEN) . PHP_EOL; ?>

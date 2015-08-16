@@ -18,7 +18,10 @@ class CattlogTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         // mock file system
-        $this->fsMock = new FileSystem();
+        // $this->fsMock = new FileSystem();
+        $this->fsMock = $this->getMockBuilder('Cattlog\FileSystem')
+            ->disableOriginalConstructor()
+            ->getMock();
 
         // instantiate the cattlog obj
         $this->cattlog = new Cattlog($this->fsMock);
@@ -319,5 +322,39 @@ class CattlogTest extends PHPUnit_Framework_TestCase
         $this->assertTrue( $this->cattlog->hasKey($data, 'errors.req.nested') );
         $this->assertFalse( $this->cattlog->hasKey($data, 'shunsuke') );
         $this->assertFalse( $this->cattlog->hasKey($data, 'shunsuke.nested') );
+    }
+
+    public function testGetKeysWithValuesFromDestFiles()
+    {
+        $this->fsMock
+            ->method('getDestFiles')
+            ->willReturn( array(
+                '/path/to/lang/en/messages.php',
+            ) );
+
+        $this->fsMock
+            ->method('getFileData')
+            ->willReturn( array(
+                'hello' => 'Hello world!',
+            ) );
+
+        $this->fsMock
+            ->method('fileExists')
+            ->willReturn( true );
+
+        $expected = array(
+            'messages.hello' => 'Hello world!',
+        );
+
+        $actual = $this->cattlog->getKeysWithValuesFromDestFiles('en');
+
+        $this->assertEquals($expected, $actual);
+
+        // test getKeysFromDestFiles too since we've setup our mock
+
+        $actualKeys = $this->cattlog->getKeysFromDestFiles('en');
+
+        $this->assertEquals(array_keys($expected), $actualKeys);
+
     }
 }

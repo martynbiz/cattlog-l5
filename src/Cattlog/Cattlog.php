@@ -29,13 +29,17 @@ class Cattlog
 	/**
 	 * Will remove an array of keys from data
 	 * @param array $data Data to remove keys from
-	 * @param array $keysToRemove Keys to remove from data
+	 * @param string|array $keys Keys to remove from data
 	 * @return array Data with keys removed
 	 */
-	public function removeKeys($data, $keysToRemove)
+	public function removeKeys($data, $keys)
 	{
+		// ensure keys is an array
+		if (! is_array($keys))
+			$keys = array($keys);
+
 		// loop through each key and remove it
-		foreach ($keysToRemove as $key) {
+		foreach ($keys as $key) {
 			Arr::forget($data, $key);
 		}
 
@@ -85,6 +89,10 @@ class Cattlog
 	 */
 	public function addKeys($data, $keysToAdd)
 	{
+		// ensure keys is an array
+		if (! is_array($keysToAdd))
+			$keysToAdd = array($keysToAdd);
+
 		// loop through each key and add it
 		// only add if it doesn't exist, just encase we accidentally overwrite
 		foreach ($keysToAdd as $key) {
@@ -209,7 +217,7 @@ class Cattlog
 	 * Get the keys from source directories.
 	 * @return array Keys in an indexed array
 	 */
-	public function getKeysFromDestFiles($lang)
+	public function getKeysWithValuesFromDestFiles($lang)
 	{
 		// get files in dir
 		$files = $this->fileSystem->getDestFiles($lang);
@@ -218,17 +226,31 @@ class Cattlog
 		$keys = array();
 		foreach ($files as $file) {
 
-			// get the {collection} from /path/to/files/{collection}.php
+			// get the {prefix} from /path/to/files/{prefix}.php
 			preg_match("/\/([A-Za-z0-9_\-\.]*)\.php$/", $file, $parts);
 			$prefix = @$parts[1] . '.';
 
 			// flatten to get keys such as "between.numeric", then take the
 			// keys only (array_keys), and merge with existing (array_merge)
-			if (file_exists($file))
-				$keys = array_merge(array_keys(Arr::dot($this->fileSystem->getFileData($file), $prefix)), $keys);
+			$data = $this->fileSystem->getFileData($file);
+			$flattened = Arr::dot($data, $prefix);
+			$keys = array_merge($flattened, $keys);
 		}
 
+
 		return $keys;
+	}
+
+	/**
+	 * Get the keys from source directories.
+	 * @return array Keys in an indexed array
+	 */
+	public function getKeysFromDestFiles($lang)
+	{
+		// get files in dir
+		$data = $this->getKeysWithValuesFromDestFiles($lang);
+
+		return array_keys($data);
 	}
 
 	/**
@@ -252,4 +274,26 @@ class Cattlog
 
 		return $grouped;
 	}
+
+	// /**
+	//  * Will recursively count keys in a
+	//  * @param array Ungrouped array of keys
+	//  * @return array Grouped keys
+	//  */
+	// public function countKeys($data)
+	// {
+	// 	$grouped = array();
+	// 	foreach ($keys as $key) {
+	// 		$parts = explode('.', $key);
+	// 		$file = array_shift($parts);
+	//
+	// 		// ensure this file is an array already
+	// 		if (!isset($grouped[$file]) or !is_array($grouped[$file]))
+	// 			$grouped[$file] = array();
+	//
+	// 		array_push($grouped[$file], implode('.', $parts));
+	// 	}
+	//
+	// 	return $grouped;
+	// }
 }
