@@ -2,16 +2,13 @@
 
 ## Introduction ##
 
-A CLI tool for scanning text documents and extracting keys. Store those keys in
-text files (e.g. PHP array, CSV, JSON, or custom format). Especially useful for
-scanning view files to extract keys for multi-language applications, although could
-have other uses too.
+A CLI tool for Laravel 5 to manage translation files and syncing entries with view files. Allows translations to be synced with views, get/set values, and list empty values.
 
 ## Installation ##
 
 Install with composer
 
-    composer require martynbiz/cattlog
+    composer require martynbiz/cattlog-l5
 
 ## Usage ##
 
@@ -25,25 +22,12 @@ This will create the following file (/path/to/project/cattlog.json):
 
 ```json
 {
-    "src": [
-	   "./path/to/source/files"
-    ],
-    "dest": "./path/to/dest/{name}.json",
-    "format": "json"
-    "pattern": [
-   	    "_\\(\\'(.*)\',",
-        "_n\\(\\'(.*)\',"
-    ],
-    "valid_names": [
-        "en",
-        "ja"
-    ]
+    "src": [...],
+    "dest": [...],
+    "pattern": [...],
+    "valid_languages": [...]
 }
 ```
-
-Note: as JSON will use the backslash to escape characters within it's strings, and regular expressions require backslashes tp escape special characters (e.g. "(" ), double backslashes may be require. For example, the regular expression "/\$ml\->_(\'\')/" would be represented as "/\\$ml\\->_(\\'\\')/".
-
-TODO Need to implement support for multiple patterns
 
 ### Update keys ###
 
@@ -57,58 +41,20 @@ List all key / value combinations in a file
 
     ./vendor/bin/cattlog list en
 
+### Count keys ###
+
+Output total number of keys stored for a given language.
+
+    ./vendor/bin/cattlog list en
+
 ### Setting values ###
 
-Set an existing key value
+Set an existing key value. If a key doesn't exist, run "cattlog update <lang>" to populate empty keys.
 
     ./vendor/bin/cattlog set_value en MY_KEY=something
-
-Set a value. Create a new key if one doesn't exist already.
-
-    ./vendor/bin/cattlog set_value en MY_KEY=something --create
 
 ### List options ###
 
 Passing no parameters will list all options
 
     ./vendor/bin/cattlog
-
-## Filters ##
-
-Filters are used to encode and decode data and text respectively. They are selected by setting the "filter" property in the config file.
-
-### Built in filters ###
-
-The following built in filters are available:
-
-* csv
-* php
-* json
-
-To set in config, do:
-
-    "filter": "json"
-
-### Create a custom filter ##"
-
-The prebuilt filters may not serve your purpose. Instead, you can define custom filters. These will let you generate the destination files in the format you need.
-
-To define a custom format, create a file within `.cattlog/filter/Myfilter.php` (uppercase first letter only)
-
-To set in config, do:
-
-    "filter": "myfilter"
-
-You can also overwrite existing filters. For example, the following file has been created to overwrite "php" filter. Cattlog will first check if the class exists within custom filters directory before checking built in filters:
-
-    .cattlog/filters/Php.php
-
-So if `"filter": "php"` is set, Cattlog will pick the custom filter and use that.
-
-##TODO##
-
-* make list show cropped value too (not just keys)
-
-* how can cattlog be incorporated into "php artisan ..."?
-
-does laravel support sub lang folders too? lang/en/messages/hello.php
