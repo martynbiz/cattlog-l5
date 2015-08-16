@@ -107,17 +107,7 @@ So if `"filter": "php"` is set, Cattlog will pick the custom filter and use that
 
 ##TODO##
 
-* Allow a array of patterns, optional single/double quotes
-* Can cattlog create a dest folder e.g. mkdir -p ...? new languages?
-* only overwrite (or get files that are configured right)
-* cache getDestFiles
-* make use of FileSystem for mocking - getKeysFromSrcFiles, getKeysFromDestFiles, setValue
-* remove Arr::* calls from cli script
-* getDestByKey - replace getDestFile (..$group)
-* getDestFiles($lang, array('file_exists' => true))
-* do all commands check for correct number of params?
-* checking valid_languages?
-* re-introduce Cattlog/Storage? writeData, getData
+* make list show cropped value too (not just keys)
 
 * how can cattlog be incorporated into "php artisan ..."?
 

@@ -4,7 +4,7 @@
 require realpath(__DIR__ . '/../../../autoload.php');
 
 use Cattlog\Keys as Cattlog;
-use Cattlog\Colorize;
+use Cattlog\Output;
 use Cattlog\FileSystem;
 
 define('PROJECT_DIR', getcwd());
@@ -26,10 +26,10 @@ try {
             $srcFile = realpath(__DIR__ . '/../files/cattlog.json');
 
             if (is_array($config)) {
-                echo Colorize::warning('File ./cattlog.json already exists.') . PHP_EOL;
+                echo Output::warning('File ./cattlog.json already exists.') . PHP_EOL;
             } else {
                 copy($srcFile, CONFIG_FILE);
-                echo Colorize::success('Created ./cattlog.json config file.') . PHP_EOL;
+                echo Output::success('Created ./cattlog.json config file.') . PHP_EOL;
             }
             break;
 
@@ -42,6 +42,10 @@ try {
             // get $lang from paramaters
             if (! $lang = @$argv[2])
                 throw new Exception('Language parameter missing - cattlog list <lang>');
+
+            // get $lang from paramaters
+            if (isset($config['valid_languages']) and !in_array($lang, $config['valid_languages']))
+                throw new Exception('"' . $lang . '" is not in your valid_languages configuration.');
 
             // $keysFromDest = $cattlog->getKeysFromDestFiles($lang);
             $data = $cattlog->getKeysWithValuesFromDestFiles($lang);
@@ -67,7 +71,60 @@ try {
             if (! $lang = @$argv[2])
                 throw new Exception('Language parameter missing - cattlog scan <lang>');
 
+            // get $lang from paramaters
+            if (isset($config['valid_languages']) and !in_array($lang, $config['valid_languages']))
+                throw new Exception('"' . $lang . '" is not in your valid_languages configuration.');
+
             require TEMPLATE_DIR . '/scan.php';
+
+            break;
+
+        case 'count':
+
+            // get $lang from paramaters
+            if (! $lang = @$argv[2])
+                throw new Exception('Language parameter missing - cattlog count <lang>');
+
+            // get $lang from paramaters
+            if (isset($config['valid_languages']) and !in_array($lang, $config['valid_languages']))
+                throw new Exception('"' . $lang . '" is not in your valid_languages configuration.');
+
+            $data = $cattlog->getKeysWithValuesFromDestFiles($lang);
+
+            echo Output::success(count($data)) . PHP_EOL;
+
+            break;
+
+        case 'get_value':
+
+            // get $lang from paramaters
+            if (! $lang = @$argv[2])
+                throw new Exception('Language parameter missing - cattlog get_value <lang> <key>');
+
+            // get $lang from paramaters
+            if (isset($config['valid_languages']) and !in_array($lang, $config['valid_languages']))
+                throw new Exception('"' . $lang . '" is not in your valid_languages configuration.');
+
+            // get $key from paramaters
+            if (! $key = @$argv[3])
+                throw new Exception('key pair missing - cattlog get_value <lang> <key>');
+
+            // from the original key (e.g. messages.hello), get the file and key (hello)
+            list($file, $key) = $fileSystem->getDestArrayByKey($lang, $key);
+
+            // attempt to get data from file
+            if ($data = $fileSystem->getFileData($file)) {
+
+                if ($cattlog->hasKey($data, $key)) {
+                    $value = $cattlog->getValue($data, $key);
+                    echo Output::success(json_encode($value)) . PHP_EOL;
+                } else {
+                    throw new Exception('Could not find key "' . $key . '"');
+                }
+
+            } else {
+                throw new Exception('Could not retrieve data from "' . $file . '".');
+            }
 
             break;
 
@@ -76,6 +133,10 @@ try {
             // get $lang from paramaters
             if (! $lang = @$argv[2])
                 throw new Exception('Language parameter missing - cattlog get_value <lang> <key>="<value>"');
+
+            // get $lang from paramaters
+            if (isset($config['valid_languages']) and !in_array($lang, $config['valid_languages']))
+                throw new Exception('"' . $lang . '" is not in your valid_languages configuration.');
 
             // we need the key=value
             if (! isset($argv[3]))
@@ -88,11 +149,8 @@ try {
 
             list($file, $key) = $fileSystem->getDestArrayByKey($lang, $key);
 
-            if ($file) {
-
-                // if a physical file doesn't yet exist, then set as
-                // an empty array. we'll create a new file
-                $data = (file_exists($file)) ? $fileSystem->getFileData($file) : array();
+            // attempt to get data from file
+            if ($data = $fileSystem->getFileData($file)) {
 
                 if ($cattlog->hasKey($data, $key)) {
                     $cattlog->setValue($data, $key, $newValue, array(
@@ -103,43 +161,13 @@ try {
                     // write to file
                     $fileSystem->writeDataToFile($file, $data);
 
-                    echo Colorize::success($newValue) . PHP_EOL;
+                    echo Output::success($newValue) . PHP_EOL;
                 } else {
                     throw new Exception('Could not find key "' . $key . '"');
                 }
+            } else {
+                throw new Exception('Could not retrieve data from "' . $file . '".');
             }
-
-            break;
-
-        case 'get_value':
-
-            // get $lang from paramaters
-            if (! $lang = @$argv[2])
-                throw new Exception('Language parameter missing - cattlog get_value <lang> <key>');
-
-            // get $key from paramaters
-            if (! $key = @$argv[3])
-                throw new Exception('key pair missing - cattlog get_value <lang> <key>');
-
-            // from the original key (e.g. messages.hello), get the file and key (hello)
-            list($file, $key) = $fileSystem->getDestArrayByKey($lang, $key);
-
-            if ($data = $fileSystem->getFileData($file)) {
-                $value = $cattlog->getValue($data, $key);
-                echo Colorize::success(json_encode($value)) . PHP_EOL;
-            }
-
-            break;
-
-        case 'count':
-
-            // get $lang from paramaters
-            if (! $lang = @$argv[2])
-                throw new Exception('Language parameter missing - cattlog count <lang>');
-
-            $data = $cattlog->getKeysWithValuesFromDestFiles($lang);
-
-            echo Colorize::success(count($data)) . PHP_EOL;
 
             break;
 
@@ -151,6 +179,10 @@ try {
             // get $lang from paramaters
             if (! $lang = @$argv[2])
                 throw new Exception('Language parameter missing - cattlog update <lang>');
+
+            // get $lang from paramaters
+            if (isset($config['valid_languages']) and !in_array($lang, $config['valid_languages']))
+                throw new Exception('"' . $lang . '" is not in your valid_languages configuration.');
 
             require TEMPLATE_DIR . '/scan.php';
 
@@ -164,7 +196,7 @@ try {
 
             // confirm proceed
             if (strtolower(readline('Sync files? (y/N) ')) != 'y') {
-                echo Colorize::error('Operation aborted.') . PHP_EOL;
+                echo Output::error('Operation aborted.') . PHP_EOL;
                 break;
             } else {
                 echo PHP_EOL; // keep it tidy
@@ -190,15 +222,15 @@ try {
                         $data = $fileSystem->getFileData($file);
 
                         // add these keys to data
-                        $data = $cattlog->addKeys($data, $innerKey);
+                        $data = $cattlog->add($data, $innerKey);
 
                         // write to file
                         $fileSystem->writeDataToFile($file, $data);
 
-                        echo '  ' . Colorize::success($file) . PHP_EOL;
+                        echo '  ' . Output::success($file) . PHP_EOL;
                     } else {
                         // key exists, but file not in config
-                        echo '  ' . Colorize::warning('No file matches key "' . $key . '"') . PHP_EOL;
+                        echo '  ' . Output::warning('No file matches key "' . $key . '"') . PHP_EOL;
                     }
                 }
             }
@@ -227,10 +259,10 @@ try {
                         // write to file
                         $fileSystem->writeDataToFile($file, $data);
 
-                        echo '  ' . Colorize::success($file) . PHP_EOL;
+                        echo '  ' . Output::success($file) . PHP_EOL;
                     } else {
                         // key exists, but file not in config
-                        echo '  ' . Colorize::warning('No file matches key "' . $key . '"') . PHP_EOL;
+                        echo '  ' . Output::warning('No file matches key "' . $key . '"') . PHP_EOL;
                     }
                 }
             }
@@ -247,5 +279,5 @@ try {
             throw new Exception('Command not recognised');
     }
 } catch (Exception $e) {
-    echo Colorize::error('Error: ' . $e->getMessage()) . PHP_EOL;
+    echo Output::error('Error: ' . $e->getMessage()) . PHP_EOL;
 }

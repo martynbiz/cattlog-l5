@@ -1,12 +1,13 @@
 <?php namespace Cattlog;
 
 /**
- * A simple class that let's us color text in the output
+ * A simple class that let's us color text in the output, and
+ * crop
  */
 
 //https://github.com/lijinma/php-cli-color
 
-class Colorize
+class Output
 {
 	const BLACK = "\033[0;30m";
 	const DARK_GRAY = "\033[1;30m";
@@ -34,28 +35,36 @@ class Colorize
 	const BG_CYAN = "\033[46m";
 	const BG_LIGHT_GRAY = "\033[47m";
 
-	function _($text, $color='')
+	public function _($text, $color='')
 	{
 		return $color . $text . chr(27) . "[0m";
 	}
 
-	function success($text)
+	public function success($text)
 	{
 		return self::_($text, self::GREEN);
 	}
 
-	function warning($text)
+	public function warning($text)
 	{
 		return self::_($text, self::BG_YELLOW);
 	}
 
-	function highlight($text)
+	public function highlight($text)
 	{
 		return self::_($text, self::BROWN);
 	}
 
-	function error($text)
+	public function error($text)
 	{
 		return self::_($text, self::RED);
+	}
+
+	public function crop($text)
+	{
+		$text = str_replace(PHP_EOL, '\\n', $text);
+		$text = (strlen($text) > 50) ? substr($text, 0, 47) . '...' : $text;
+
+		return $text;
 	}
 }

@@ -6,6 +6,11 @@ class FileSystem
 {
 	use ConfigTrait;
 
+	/**
+	 * @var array $srcFiles Cache of source files, retrieved on each execution
+	 */
+	protected $srcFiles;
+
 	public function __construct($config=array())
 	{
 		// set defaults
@@ -46,7 +51,21 @@ class FileSystem
 	 */
 	public function getSrcFiles()
 	{
-		return $this->getFiles($this->config['src']);
+		// src files are cached to be less calls on the fs
+		if (!$this->srcFiles) {
+			$this->srcFiles = $this->getFiles($this->config['src']);
+		}
+
+		return $this->srcFiles;
+	}
+
+	/**
+	 * Get the content as a string
+	 * @return string File contents
+	 */
+	public function fileExists($file)
+	{
+		return file_exists($file);
 	}
 
 	/**
@@ -86,7 +105,8 @@ class FileSystem
 	}
 
 	/**
-	 * Will return the string path of the file
+	 * Will return the string paths of the destination files. Doesn't check
+	 * if file exists (without passing in some option I guess)
 	 * @return string Dest file path
 	 */
 	public function getDestFileByCollection($lang, $collection)
@@ -190,11 +210,17 @@ class FileSystem
 	 */
 	public function writeDataToFile($file, $data)
 	{
+		// ensure all folders exist
+		$dirPath = explode('/', $file);
+		array_pop($dirPath);
+		$dirPath = implode('/', $dirPath);
+		if (! is_dir($dirPath)) mkdir($dirPath, 0777, TRUE);
+
 		$data = '<'.'?php' . PHP_EOL .
         PHP_EOL .
         'return ' . var_export($data, true) . ';';
 
-		// TODO this is the only place we use encode, get rid of filter ne
+		// will create a file if none exist
 		file_put_contents($file, $data);
 	}
 }
