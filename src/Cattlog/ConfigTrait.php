@@ -17,7 +17,7 @@ trait ConfigTrait
 	 */
 	public function getConfig()
 	{
-		return $this->config();
+		return $this->config;
 	}
 
 	/**
@@ -26,7 +26,7 @@ trait ConfigTrait
 	 */
 	public function setConfig($newConfig)
 	{
-		$this->config = array_merge($this->config(), $newConfig);
+		$this->config = array_merge($this->config, $newConfig);
 	}
 
 }

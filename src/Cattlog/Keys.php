@@ -19,9 +19,17 @@ class Keys
 	 */
 	public function __construct(FileSystem $fileSystem, $config=array())
 	{
+		// we'll use file system for any file access related stuff
+		// also by passing it in, let's us test the class more effectively
 		$this->fileSystem = $fileSystem;
 
-		$this->config = $config;
+		// set default config for Laravel
+		$this->config = array_merge(array(
+			'pattern' => array(
+				'/trans\\s*\\(\\s*[\\\'|\\"]([A-Za-z0-9_\\-\\.]*)[\\\'|\\"]/',
+				'/Lang::get\\s*\\(\\s*[\\\'|\\"]([A-Za-z0-9_\\-\\.]*)[\\\'|\\"]/',
+			),
+		), $config);
 	}
 
 	/**
@@ -43,38 +51,6 @@ class Keys
 
 		// Tidy up empty arrays
 		$data = $this->removeEmptyKeys($data);
-
-		return $data;
-	}
-
-	/**
-	 * Will remove empty keys from data recursively. Useful after
-	 * removing keys and empty arrays remain
-	 * @param array $data Data to remove keys from
-	 * @param array $keysToRemove Keys to remove from data
-	 * @return array Data with keys removed
-	 */
-	protected function removeEmptyKeys($data) {
-
-		// first loop through and build array of elements to remove
-		$keysToRemove = array();
-		foreach ($data as $key => $value) {
-
-			// first, if an array .. dig first
-			if (is_array($data[$key])) {
-				$data[$key] = $this->removeEmptyKeys($data[$key]);
-			}
-
-			// by this point, some children may have been removed, check
-			if (is_array($data[$key]) and empty($data[$key])) {
-				array_push($keysToRemove, $key);
-			}
-		}
-
-		// no we are out the loop, delete all those that were empty
-		foreach ($keysToRemove as $key) {
-			unset($data[$key]);
-		}
 
 		return $data;
 	}
@@ -273,25 +249,35 @@ class Keys
 		return $grouped;
 	}
 
-	// /**
-	//  * Will recursively count keys in a
-	//  * @param array Ungrouped array of keys
-	//  * @return array Grouped keys
-	//  */
-	// public function countKeys($data)
-	// {
-	// 	$grouped = array();
-	// 	foreach ($keys as $key) {
-	// 		$parts = explode('.', $key);
-	// 		$file = array_shift($parts);
-	//
-	// 		// ensure this file is an array already
-	// 		if (!isset($grouped[$file]) or !is_array($grouped[$file]))
-	// 			$grouped[$file] = array();
-	//
-	// 		array_push($grouped[$file], implode('.', $parts));
-	// 	}
-	//
-	// 	return $grouped;
-	// }
+	/**
+	 * Will remove empty keys from data recursively. Useful after
+	 * removing keys and empty arrays remain
+	 * @param array $data Data to remove keys from
+	 * @param array $keysToRemove Keys to remove from data
+	 * @return array Data with keys removed
+	 */
+	protected function removeEmptyKeys($data) {
+
+		// first loop through and build array of elements to remove
+		$keysToRemove = array();
+		foreach ($data as $key => $value) {
+
+			// first, if an array .. dig first
+			if (is_array($data[$key])) {
+				$data[$key] = $this->removeEmptyKeys($data[$key]);
+			}
+
+			// by this point, some children may have been removed, check
+			if (is_array($data[$key]) and empty($data[$key])) {
+				array_push($keysToRemove, $key);
+			}
+		}
+
+		// no we are out the loop, delete all those that were empty
+		foreach ($keysToRemove as $key) {
+			unset($data[$key]);
+		}
+
+		return $data;
+	}
 }

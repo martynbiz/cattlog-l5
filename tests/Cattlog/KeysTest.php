@@ -369,16 +369,6 @@ class KeysTest extends PHPUnit_Framework_TestCase
 
     public function testGetKeysFromSrcFiles()
     {
-        $this->cattlog->setConfig(array(
-            "pattern" => array(
-                "/Lang::get\\s*\\(\\s*\\'([A-Za-z0-9_\\-\\.]*)\\'/",
-                "/trans\\s*\\(\\s*\\'([A-Za-z0-9_\\-\\.]*)\\'/"
-            ),
-            "languages" => array(
-                "en"
-            ),
-        ));
-
         $this->fsMock
             ->method('getSrcFiles')
             ->willReturn( array(
@@ -387,15 +377,25 @@ class KeysTest extends PHPUnit_Framework_TestCase
 
         $this->fsMock
             ->method('getFileContents')
-            ->willReturn( '<h1>{{trans(\'messages.home.title\')}}</h1>' . PHP_EOL .
-            '<p>{{trans(\'messages.home.intro\')}}</p>' . PHP_EOL);
+            ->willReturn( '<h1>{{trans(\'headers.trans.single_quotes\')}}</h1>' . PHP_EOL
+            . '<p>{{Lang::get(\'para.lang.single_quotes\')}}</p>' . PHP_EOL
+            . '<p>{{trans("para.trans.double_quotes")}}</p>' . PHP_EOL
+            . '<p>{{Lang::get("para.lang.double_quotes")}}</p>' . PHP_EOL
+            . '<p>{{trans ( "para.trans.whitespace")}}</p>' . PHP_EOL);
 
         $expected = array(
-            'messages.home.title',
-            'messages.home.intro',
+            'headers.trans.single_quotes',
+            'para.lang.single_quotes',
+            'para.trans.double_quotes',
+            'para.lang.double_quotes',
+            'para.trans.whitespace',
         );
 
         $actual = $this->cattlog->getKeysFromSrcFiles();
+
+        // order is only important for assertion
+        sort($expected);
+        sort($actual);
 
         $this->assertEquals($expected, $actual);
     }

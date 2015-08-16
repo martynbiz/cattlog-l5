@@ -1,5 +1,9 @@
 <?php namespace Cattlog;
 
+/**
+ * A simple class that let's us color text in the output
+ */
+
 //https://github.com/lijinma/php-cli-color
 
 class Colorize
