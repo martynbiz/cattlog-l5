@@ -9,7 +9,7 @@ interface AdapterInterface
 	 * @param FileSystem $fileSystem For any file access requests (eg. get array of source files)
 	 * @param array $config Config for the class
 	 */
-	public function __construct(FileSystem $fileSystem, $config=array())
+	public function __construct(FileSystem $fileSystem, $config=array());
 
 	/**
 	 * Will add keys with blank values

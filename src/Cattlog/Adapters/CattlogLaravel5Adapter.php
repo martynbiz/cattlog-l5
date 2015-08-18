@@ -5,7 +5,7 @@ use Illuminate\Support\Arr;
 use Cattlog\ConfigTrait;
 use Cattlog\FileSystem;
 
-class CattlogLaravel5Adapter extends AdapterAbstract
+class CattlogLaravel5Adapter implements AdapterInterface
 {
 	use ConfigTrait;
 
@@ -28,7 +28,9 @@ class CattlogLaravel5Adapter extends AdapterAbstract
 			),
 		), $config);
 
-		parent::__construct($fileSystem, $config);
+		// we'll use file system for any file access related stuff
+		// also by passing it in, let's us test the class more effectively
+		$this->fileSystem = $fileSystem;
 	}
 
 	/**
