@@ -156,6 +156,27 @@ class CattlogLaravel5AdapterTest extends BaseAdapterTest
         $this->assertEquals($expected, $actual);
     }
 
+    public function testGetValue()
+    {
+        $data = array(
+            'TEST_1' => 'test 1',
+            'TEST_2' => 'test 2',
+            'TEST_3' => 'test 3',
+            'TEST_4' => 'test 4',
+            'TEST_5' => array(
+                'NEST_1' => 'nest 1'
+            ),
+        );
+
+        ;
+        $this->adapter->getValue($data, 'TEST_2');
+        $this->adapter->getValue($data, 'TEST_XX');
+
+        $this->assertEquals($this->adapter->getValue($data, 'TEST_1'), 'test 1');
+        $this->assertEquals($this->adapter->getValue($data, 'TEST_5.NEST_1'), 'nest 1');
+        $this->assertEquals($this->adapter->getValue($data, 'TEST_XX'), null);
+    }
+
     public function testSetValue()
     {
         $actual = array(

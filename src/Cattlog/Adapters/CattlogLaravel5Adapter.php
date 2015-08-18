@@ -135,15 +135,10 @@ class CattlogLaravel5Adapter implements AdapterInterface
 		// default options
 		$options = array_merge(array(
 			'create' => true, // create new, if none exist
-			'overwrite' => true, // overwrite existing value
 		), $options);
 
 		// use Laravel's array_get to check if the element exists using dot notation
-		if(Arr::has($data, $key)) {
-			if ($options['overwrite']) {
-				Arr::set($data, $key, $newValue);
-			}
-		} elseif ($options['create']) {
+		if(Arr::has($data, $key) or $options['create']) {
 			Arr::set($data, $key, $newValue);
 		}
 

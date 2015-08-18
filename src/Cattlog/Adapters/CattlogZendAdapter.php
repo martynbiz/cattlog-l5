@@ -1,7 +1,5 @@
 <?php namespace Cattlog\Adapters;
 
-// as this tool is for use within Laravel, we'll just use some of it's array helpers
-use Illuminate\Support\Arr;
 use Cattlog\ConfigTrait;
 use Cattlog\FileSystem;
 
@@ -34,29 +32,6 @@ class CattlogZendAdapter implements AdapterInterface
 	}
 
 	/**
-	 * Will remove an array of keys from data
-	 * @param array $data Data to remove keys from
-	 * @param string|array $keys Keys to remove from data
-	 * @return array Data with keys removed
-	 */
-	public function remove($data, $keys)
-	{
-		// ensure keys is an array
-		if (! is_array($keys))
-			$keys = array($keys);
-
-		// loop through each key and remove it
-		foreach ($keys as $key) {
-			Arr::forget($data, $key);
-		}
-
-		// Tidy up empty arrays
-		$data = $this->removeEmptyKeys($data);
-
-		return $data;
-	}
-
-	/**
 	 * Will add keys with blank values
 	 * @param array $data Data to add keys to
 	 * @param array $keysToAdd Keys to add to data
@@ -68,16 +43,26 @@ class CattlogZendAdapter implements AdapterInterface
 		if (! is_array($keys))
 			$keys = array($keys);
 
-		// loop through each key and add it
-		// only add if it doesn't exist, just encase we accidentally overwrite
-		foreach ($keys as $key) {
+		// flip keys, so we can merge them with $data
+		$keys = array_fill_keys($keys, '');
 
-			// use Laravel's array_get to check if the element exists using dot notation
-			if(! Arr::has($data, $key))
-				$this->setValue($data, $key, '');
-		}
+		// $data will overwrite $keys so previous values not overwritten
+		return array_merge($keys, $data);
+	}
 
-		return $data;
+	/**
+	 * Will remove an array of keys from data
+	 * @param array $data Data to remove keys from
+	 * @param string|array $keys Keys to remove from data
+	 * @return array Data with keys removed
+	 */
+	public function remove($data, $keys)
+	{
+		// ensure keys is an array
+		if (! is_array($keys))
+			$keys = array($keys);
+
+		return array_diff_key($data, array_flip($keys));
 	}
 
 	/**
@@ -120,7 +105,7 @@ class CattlogZendAdapter implements AdapterInterface
 	 */
 	public function getValue($data, $key)
 	{
-		return Arr::get($data, $key);
+		return (array_key_exists($key, $data)) ? $data[$key] : null;
 	}
 
 	/**
@@ -138,10 +123,8 @@ class CattlogZendAdapter implements AdapterInterface
 		), $options);
 
 		// use Laravel's array_get to check if the element exists using dot notation
-		if(Arr::has($data, $key)) {
-			Arr::set($data, $key, $newValue);
-		} elseif ($options['create']) {
-			Arr::set($data, $key, $newValue);
+		if(array_key_exists($key, $data) or $options['create']) {
+			$data[$key] = $newValue;
 		}
 
 		return $data;
@@ -155,7 +138,7 @@ class CattlogZendAdapter implements AdapterInterface
 	 */
 	public function hasKey($data, $key)
 	{
-		return Arr::has($data, $key);
+		return array_key_exists($key, $data);
 	}
 
 	/**
@@ -197,18 +180,9 @@ class CattlogZendAdapter implements AdapterInterface
 		// for each file, get the key in string format
 		$keys = array();
 		foreach ($files as $file) {
-
-			// get the {prefix} from /path/to/files/{prefix}.php
-			preg_match("/\/([A-Za-z0-9_\-\.]*)\.php$/", $file, $parts);
-			$prefix = @$parts[1] . '.';
-
-			// flatten to get keys such as "between.numeric", then take the
-			// keys only (array_keys), and merge with existing (array_merge)
 			$data = $this->fileSystem->getFileData($file);
-			$flattened = Arr::dot($data, $prefix);
-			$keys = array_merge($flattened, $keys);
+			$keys = array_merge($data, $keys);
 		}
-
 
 		return $keys;
 	}

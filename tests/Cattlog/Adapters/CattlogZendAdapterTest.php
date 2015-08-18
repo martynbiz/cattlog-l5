@@ -59,6 +59,33 @@ class CattlogZendAdapterTest extends BaseAdapterTest
         ), $added);
     }
 
+    public function testAdd()
+    {
+        $data = array(
+            'TEST_1' => 'test 1',
+            'TEST_2' => 'test 2',
+            'TEST_3' => 'test 3',
+            'TEST_4' => 'test 4',
+            'TEST_5' => 'test 5',
+        );
+
+        $keysToAdd = array('TEST_2', 'TEST_6', 'TEST_7');
+
+        $expected = array(
+            'TEST_1' => 'test 1',
+            'TEST_2' => 'test 2', // this one shouldn't be blank
+            'TEST_3' => 'test 3',
+            'TEST_4' => 'test 4',
+            'TEST_5' => 'test 5',
+            'TEST_6' => '',
+            'TEST_7' => '',
+        );
+
+        $actual = $this->adapter->add($data, $keysToAdd);
+
+        $this->assertEquals($expected, $actual);
+    }
+
     public function testRemove()
     {
         $data = array(
@@ -87,7 +114,7 @@ class CattlogZendAdapterTest extends BaseAdapterTest
         $this->assertEquals($expected, $actual);
     }
 
-    public function testAdd()
+    public function testGetValue()
     {
         $data = array(
             'TEST_1' => 'test 1',
@@ -97,21 +124,9 @@ class CattlogZendAdapterTest extends BaseAdapterTest
             'TEST_5' => 'test 5',
         );
 
-        $keysToAdd = array('TEST_2', 'TEST_6', 'TEST_7');
-
-        $expected = array(
-            'TEST_1' => 'test 1',
-            'TEST_2' => 'test 2', // this one shouldn't be blank
-            'TEST_3' => 'test 3',
-            'TEST_4' => 'test 4',
-            'TEST_5' => 'test 5',
-            'TEST_6' => '',
-            'TEST_7' => '',
-        );
-
-        $actual = $this->adapter->add($data, $keysToAdd);
-
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($this->adapter->getValue($data, 'TEST_1'), 'test 1');
+        $this->assertEquals($this->adapter->getValue($data, 'TEST_2'), 'test 2');
+        $this->assertEquals($this->adapter->getValue($data, 'TEST_XX'), null);
     }
 
     public function testSetValue()
@@ -140,6 +155,21 @@ class CattlogZendAdapterTest extends BaseAdapterTest
         $this->assertEquals($expected, $actual);
     }
 
+    public function testHasKey()
+    {
+        $data = array(
+            'TEST_1' => 'test 1',
+            'TEST_2' => 'test 2',
+            'TEST_3' => 'test 3',
+            'TEST_4' => 'test 4',
+            'TEST_5' => 'test 5',
+        );
+
+        $this->assertTrue( $this->adapter->hasKey($data, 'TEST_1') );
+        $this->assertFalse( $this->adapter->hasKey($data, 'TEST_10') );
+        $this->assertFalse( $this->adapter->hasKey($data, 'test 1') ); //
+    }
+
     public function testSetValueWithCreateFalseOption()
     {
         $actual = array(
@@ -163,25 +193,10 @@ class CattlogZendAdapterTest extends BaseAdapterTest
             'create' => false,
         );
 
-        $this->adapter->setValue($actual, 'TEST_1', 'new 1');
-        $this->adapter->setValue($actual, 'TEST_6', 'new 6'); // no set
+        $this->adapter->setValue($actual, 'TEST_1', 'new 1', $options);
+        $this->adapter->setValue($actual, 'TEST_6', 'new 6', $options); // no set
 
         $this->assertEquals($expected, $actual);
-    }
-
-    public function testHasKey()
-    {
-        $data = array(
-            'TEST_1' => 'test 1',
-            'TEST_2' => 'test 2',
-            'TEST_3' => 'test 3',
-            'TEST_4' => 'test 4',
-            'TEST_5' => 'test 5',
-        );
-
-        $this->assertTrue( $this->adapter->hasKey($data, 'TEST_1') );
-        $this->assertFalse( $this->adapter->hasKey($data, 'TEST_10') );
-        $this->assertFalse( $this->adapter->hasKey($data, 'test 1') ); //
     }
 
     public function testGetKeysWithValuesFromDestFiles()
@@ -215,24 +230,5 @@ class CattlogZendAdapterTest extends BaseAdapterTest
         $actualKeys = $this->adapter->getKeysFromDestFiles('en');
 
         $this->assertEquals(array_keys($expected), $actualKeys);
-    }
-
-    public function testSetConfig()
-    {
-        $expected = array(
-            'pattern' => '/new_pattern/',
-            'languages' => array(
-                'en',
-                'ja',
-                'ru',
-            ),
-        );
-
-        $this->adapter->setConfig($expected);
-
-        $actual = $this->adapter->getConfig();
-
-        $this->assertEquals($expected['pattern'], $actual['pattern']);
-        $this->assertEquals($expected['languages'], $actual['languages']);
     }
 }
