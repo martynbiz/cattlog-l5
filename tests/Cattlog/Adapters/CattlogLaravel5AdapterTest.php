@@ -1,35 +1,23 @@
 <?php
 
-use Cattlog\Keys as Cattlog;
+use Cattlog\Adapters\CattlogLaravel5Adapter;
 use Cattlog\FileSystem;
 
-class KeysTest extends PHPUnit_Framework_TestCase
+require 'BaseAdapterTest.php';
+
+class CattlogLaravel5AdapterTest extends BaseAdapterTest
 {
-    /**
-     * @var Cattlog $cattlog Object we'll be testing
-     */
-     protected $cattlog;
-
-     /**
-      * @var FileSystem_mock $fs
-      */
-      protected $fsMock;
-
     public function setUp()
     {
-        // mock file system
-        // $this->fsMock = new FileSystem();
-        $this->fsMock = $this->getMockBuilder('Cattlog\FileSystem')
-            ->disableOriginalConstructor()
-            ->getMock();
+       parent::setUp();
 
-        // instantiate the cattlog obj
-        $this->cattlog = new Cattlog($this->fsMock);
+       // instantiate the cattlog obj
+       $this->adapter = new CattlogLaravel5Adapter($this->fsMock);
     }
 
     public function testGetInstanceOfClass()
     {
-        $this->assertTrue($this->cattlog instanceof Cattlog);
+        $this->assertTrue($this->adapter instanceof CattlogLaravel5Adapter);
     }
 
     public function testDiffKeys()
@@ -54,7 +42,7 @@ class KeysTest extends PHPUnit_Framework_TestCase
         );
 
         // assert added
-        $added = $this->cattlog->getAddedKeys($old, $new);
+        $added = $this->adapter->getDiffAddedKeys($old, $new);
         sort($added);
         $this->assertEquals(array(
             'NEW_1',
@@ -63,7 +51,7 @@ class KeysTest extends PHPUnit_Framework_TestCase
         ), $added);
 
         // assert removed
-        $added = $this->cattlog->getRemovedKeys($old, $new);
+        $added = $this->adapter->getDiffRemovedKeys($old, $new);
         sort($added);
         $this->assertEquals(array(
             'REMOVED_1',
@@ -133,7 +121,7 @@ class KeysTest extends PHPUnit_Framework_TestCase
             ),
         );
 
-        $actual = $this->cattlog->remove($data, $keysToRemove);
+        $actual = $this->adapter->remove($data, $keysToRemove);
 
         $this->assertEquals($expected, $actual);
     }
@@ -163,42 +151,7 @@ class KeysTest extends PHPUnit_Framework_TestCase
             )
         );
 
-        $actual = $this->cattlog->add($data, $keysToAdd);
-
-        $this->assertEquals($expected, $actual);
-    }
-
-    public function testGroupKeysByFile()
-    {
-        $keys = array(
-            'messages.hello.title',
-            'messages.hello.image',
-            'errors.email',
-            'errors.required.something',
-        );
-
-        $expected = array(
-            'messages' => array(
-                'hello.title',
-                'hello.image',
-            ),
-            'errors' => array(
-                'email',
-                'required.something',
-            ),
-        );
-
-        $actual = $this->cattlog->groupKeysByFile($keys);
-
-        $this->assertEquals($expected, $actual);
-
-        // empty
-
-        $keys = array();
-
-        $expected = array();
-
-        $actual = $this->cattlog->groupKeysByFile($keys);
+        $actual = $this->adapter->add($data, $keysToAdd);
 
         $this->assertEquals($expected, $actual);
     }
@@ -225,9 +178,9 @@ class KeysTest extends PHPUnit_Framework_TestCase
             'shunsuke' => 'GOAL',
         );
 
-        $this->cattlog->setValue($actual, 'errors.email', 'Email SET');
-        $this->cattlog->setValue($actual, 'errors.req.nested', 'Nested SET');
-        $this->cattlog->setValue($actual, 'shunsuke', 'GOAL');
+        $this->adapter->setValue($actual, 'errors.email', 'Email SET');
+        $this->adapter->setValue($actual, 'errors.req.nested', 'Nested SET');
+        $this->adapter->setValue($actual, 'shunsuke', 'GOAL');
 
         $this->assertEquals($expected, $actual);
     }
@@ -258,9 +211,9 @@ class KeysTest extends PHPUnit_Framework_TestCase
             'create' => false,
         );
 
-        $this->cattlog->setValue($actual, 'errors.email', 'Email SET', $options);
-        $this->cattlog->setValue($actual, 'errors.req.nested', 'Nested SET', $options);
-        $this->cattlog->setValue($actual, 'shunsuke', 'GOAL', $options);
+        $this->adapter->setValue($actual, 'errors.email', 'Email SET', $options);
+        $this->adapter->setValue($actual, 'errors.req.nested', 'Nested SET', $options);
+        $this->adapter->setValue($actual, 'shunsuke', 'GOAL', $options);
 
         $this->assertEquals($expected, $actual);
     }
@@ -291,9 +244,9 @@ class KeysTest extends PHPUnit_Framework_TestCase
             'overwrite' => false,
         );
 
-        $this->cattlog->setValue($actual, 'errors.email', 'Email SET', $options);
-        $this->cattlog->setValue($actual, 'errors.req.nested', 'Nested SET', $options);
-        $this->cattlog->setValue($actual, 'shunsuke', 'GOAL', $options);
+        $this->adapter->setValue($actual, 'errors.email', 'Email SET', $options);
+        $this->adapter->setValue($actual, 'errors.req.nested', 'Nested SET', $options);
+        $this->adapter->setValue($actual, 'shunsuke', 'GOAL', $options);
 
         $this->assertEquals($expected, $actual);
     }
@@ -309,10 +262,10 @@ class KeysTest extends PHPUnit_Framework_TestCase
             ),
         );
 
-        $this->assertTrue( $this->cattlog->hasKey($data, 'errors.email') );
-        $this->assertTrue( $this->cattlog->hasKey($data, 'errors.req.nested') );
-        $this->assertFalse( $this->cattlog->hasKey($data, 'shunsuke') );
-        $this->assertFalse( $this->cattlog->hasKey($data, 'shunsuke.nested') );
+        $this->assertTrue( $this->adapter->hasKey($data, 'errors.email') );
+        $this->assertTrue( $this->adapter->hasKey($data, 'errors.req.nested') );
+        $this->assertFalse( $this->adapter->hasKey($data, 'shunsuke') );
+        $this->assertFalse( $this->adapter->hasKey($data, 'shunsuke.nested') );
     }
 
     public function testGetKeysWithValuesFromDestFiles()
@@ -337,34 +290,15 @@ class KeysTest extends PHPUnit_Framework_TestCase
             'messages.hello' => 'Hello world!',
         );
 
-        $actual = $this->cattlog->getKeysWithValuesFromDestFiles('en');
+        $actual = $this->adapter->getKeysWithValuesFromDestFiles('en');
 
         $this->assertEquals($expected, $actual);
 
         // test getKeysFromDestFiles too since we've setup our mock
 
-        $actualKeys = $this->cattlog->getKeysFromDestFiles('en');
+        $actualKeys = $this->adapter->getKeysFromDestFiles('en');
 
         $this->assertEquals(array_keys($expected), $actualKeys);
-    }
-
-    public function testSetConfig()
-    {
-        $expected = array(
-            'pattern' => '/new_pattern/',
-            'languages' => array(
-                'en',
-                'ja',
-                'ru',
-            ),
-        );
-
-        $this->cattlog->setConfig($expected);
-
-        $actual = $this->cattlog->getConfig();
-
-        $this->assertEquals($expected['pattern'], $actual['pattern']);
-        $this->assertEquals($expected['languages'], $actual['languages']);
     }
 
     public function testGetKeysFromSrcFiles()
@@ -391,7 +325,7 @@ class KeysTest extends PHPUnit_Framework_TestCase
             'para.trans.whitespace',
         );
 
-        $actual = $this->cattlog->getKeysFromSrcFiles();
+        $actual = $this->adapter->getKeysFromSrcFiles();
 
         // order is only important for assertion
         sort($expected);

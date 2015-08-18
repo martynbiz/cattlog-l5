@@ -35,7 +35,7 @@ interface AdapterInterface
 	 * @param array $keysFromScan The array of new key/pairs
 	 * @return array Added key/values
 	 */
-	public function getAddedKeys($keysFromDest, $keysFromScan);
+	public function getDiffAddedKeys($keysFromDest, $keysFromScan);
 
 	/**
 	 * This will compare the old and newly scanned keys, and
@@ -45,7 +45,7 @@ interface AdapterInterface
 	 * @param array $keysFromScan The array of new key/pairs
 	 * @return array Removed key/values
 	 */
-	public function getRemovedKeys($keysFromDest, $keysFromScan);
+	public function getDiffRemovedKeys($keysFromDest, $keysFromScan);
 
 	/**
 	 * Set key in $data array with dot notation

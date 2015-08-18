@@ -81,8 +81,8 @@ try {
             $keysFromDest = $cattlog->getKeysFromDestFiles($lang);
             $keysFromSrc = $cattlog->getKeysFromSrcFiles();
 
-            $keysToAdd = $cattlog->getAddedKeys($keysFromDest, $keysFromSrc);
-            $keysToRemove = $cattlog->getRemovedKeys($keysFromDest, $keysFromSrc);
+            $keysToAdd = $cattlog->getDiffAddedKeys($keysFromDest, $keysFromSrc);
+            $keysToRemove = $cattlog->getDiffRemovedKeys($keysFromDest, $keysFromSrc);
 
             require TEMPLATE_DIR . '/scan.php';
 
@@ -199,8 +199,8 @@ try {
             $keysFromDest = $cattlog->getKeysFromDestFiles($lang);
             $keysFromSrc = $cattlog->getKeysFromSrcFiles();
 
-            $keysToAdd = $cattlog->getAddedKeys($keysFromDest, $keysFromSrc);
-            $keysToRemove = $cattlog->getRemovedKeys($keysFromDest, $keysFromSrc);
+            $keysToAdd = $cattlog->getDiffAddedKeys($keysFromDest, $keysFromSrc);
+            $keysToRemove = $cattlog->getDiffRemovedKeys($keysFromDest, $keysFromSrc);
 
             require TEMPLATE_DIR . '/scan.php';
 
