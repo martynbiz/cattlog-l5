@@ -3,7 +3,7 @@
 
 require realpath(__DIR__ . '/../../../autoload.php');
 
-use Cattlog\Keys as Cattlog;
+use Cattlog\Adapters\CattlogLaravel5Adapter as Cattlog;
 use Cattlog\Output;
 use Cattlog\FileSystem;
 
@@ -74,6 +74,15 @@ try {
             // get $lang from paramaters
             if (isset($config['valid_languages']) and !in_array($lang, $config['valid_languages']))
                 throw new Exception('"' . $lang . '" is not in your valid_languages configuration.');
+
+            // don't filter files that don't exist, we want to show those too
+            $destFiles = $fileSystem->getDestFiles($lang);
+
+            $keysFromDest = $cattlog->getKeysFromDestFiles($lang);
+            $keysFromSrc = $cattlog->getKeysFromSrcFiles();
+
+            $keysToAdd = $cattlog->getAddedKeys($keysFromDest, $keysFromSrc);
+            $keysToRemove = $cattlog->getRemovedKeys($keysFromDest, $keysFromSrc);
 
             require TEMPLATE_DIR . '/scan.php';
 
@@ -184,6 +193,15 @@ try {
             if (isset($config['valid_languages']) and !in_array($lang, $config['valid_languages']))
                 throw new Exception('"' . $lang . '" is not in your valid_languages configuration.');
 
+            // don't filter files that don't exist, we want to show those too
+            $destFiles = $fileSystem->getDestFiles($lang);
+
+            $keysFromDest = $cattlog->getKeysFromDestFiles($lang);
+            $keysFromSrc = $cattlog->getKeysFromSrcFiles();
+
+            $keysToAdd = $cattlog->getAddedKeys($keysFromDest, $keysFromSrc);
+            $keysToRemove = $cattlog->getRemovedKeys($keysFromDest, $keysFromSrc);
+
             require TEMPLATE_DIR . '/scan.php';
 
 
@@ -206,7 +224,6 @@ try {
 
             // add keys
             if (count($keysToAdd)) {
-                // $keysToAddGrouped = $cattlog->groupKeysByFile($keysToAdd);
 
                 echo 'Adding to files:' . PHP_EOL;
 
@@ -238,7 +255,6 @@ try {
 
             // remove keys
             if (count($keysToRemove)) {
-                // $keysToRemoveGrouped = $cattlog->groupKeysByFile($keysToRemove);
 
                 echo 'Removing keys from files:' . PHP_EOL;
 
